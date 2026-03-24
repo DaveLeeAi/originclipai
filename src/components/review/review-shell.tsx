@@ -26,7 +26,7 @@ interface ReviewShellProps {
 
 type Tab = 'clips' | 'text';
 
-export function ReviewShell({ jobId, sourceTitle, initialClips, initialTexts }: ReviewShellProps) {
+export function ReviewShell({ sourceTitle, initialClips, initialTexts }: ReviewShellProps) {
   const [tab, setTab] = useState<Tab>('clips');
   const [clips, setClips] = useState(initialClips);
   const [texts, setTexts] = useState(initialTexts);

@@ -228,8 +228,9 @@ export class TikTokAdapter implements SocialAdapter {
         // TikTok doesn't return a direct URL immediately — it's available after processing
         platformPostUrl: undefined,
       };
-    } catch (error: any) {
-      return { success: false, error: error.message, errorCode: 'unknown' };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: message, errorCode: 'unknown' };
     }
   }
 

@@ -7,7 +7,7 @@ import { ApiKeysManager } from '@/components/settings/api-keys-manager';
 export default function ApiKeysPage() {
   const { keys, refresh } = useApiKeys();
   const { plan } = useUsage();
-  const hasApiAccess = plan === 'PRO' || plan === 'BUSINESS';
+  const hasApiAccess = plan === 'pro' || plan === 'business';
 
   const handleCreateKey = async (name: string) => {
     const res = await fetch('/api/v1/api-keys', {

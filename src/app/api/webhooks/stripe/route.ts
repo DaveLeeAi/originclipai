@@ -3,18 +3,19 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { db } from '@/lib/db/client';
+import { Plan } from '@prisma/client';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
-});
-
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;
+function getStripeClient(): Stripe {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2026-02-25.clover',
+  });
+}
 
 // Plan mapping: Stripe price ID → app plan + limits
 const PLAN_MAP: Record<string, { plan: string; minutesLimit: number }> = {
-  [process.env.STRIPE_PRICE_CREATOR ?? 'price_creator']: { plan: 'CREATOR', minutesLimit: 300 },
-  [process.env.STRIPE_PRICE_PRO ?? 'price_pro']: { plan: 'PRO', minutesLimit: 900 },
-  [process.env.STRIPE_PRICE_BUSINESS ?? 'price_business']: { plan: 'BUSINESS', minutesLimit: 2400 },
+  [process.env.STRIPE_PRICE_CREATOR ?? 'price_creator']: { plan: 'creator', minutesLimit: 300 },
+  [process.env.STRIPE_PRICE_PRO ?? 'price_pro']: { plan: 'pro', minutesLimit: 900 },
+  [process.env.STRIPE_PRICE_BUSINESS ?? 'price_business']: { plan: 'business', minutesLimit: 2400 },
 };
 
 export async function POST(req: Request) {
@@ -27,8 +28,10 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event;
 
+  const stripe = getStripeClient();
+
   try {
-    event = stripe.webhooks.constructEvent(body, signature, WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch (err) {
     console.error('[stripe-webhook] Signature verification failed:', err);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
@@ -77,6 +80,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   if (!customerId || !subscriptionId) return;
 
   // Fetch the subscription to get the plan details
+  const stripe = getStripeClient();
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const priceId = subscription.items.data[0]?.price.id;
   const planInfo = priceId ? PLAN_MAP[priceId] : null;
@@ -90,10 +94,10 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   await db.profile.updateMany({
     where: { stripeCustomerId: customerId },
     data: {
-      plan: planInfo.plan as any,
+      plan: planInfo.plan as Plan,
       minutesLimit: planInfo.minutesLimit,
       stripeSubscriptionId: subscriptionId,
-      billingCycleStart: new Date(subscription.current_period_start * 1000),
+      billingCycleStart: new Date(subscription.billing_cycle_anchor * 1000),
     },
   });
 
@@ -111,7 +115,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   await db.profile.updateMany({
     where: { stripeCustomerId: customerId },
     data: {
-      plan: planInfo.plan as any,
+      plan: planInfo.plan as Plan,
       minutesLimit: planInfo.minutesLimit,
       stripeSubscriptionId: subscription.id,
     },
@@ -127,13 +131,13 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   await db.profile.updateMany({
     where: { stripeCustomerId: customerId },
     data: {
-      plan: 'FREE',
+      plan: 'free',
       minutesLimit: 30,
       stripeSubscriptionId: null,
     },
   });
 
-  console.log(`[stripe-webhook] Subscription cancelled: customer=${customerId}, downgraded to FREE`);
+  console.log(`[stripe-webhook] Subscription cancelled: customer=${customerId}, downgraded to free`);
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
@@ -141,8 +145,10 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   if (!customerId) return;
 
   // Reset usage on successful payment (new billing cycle)
-  const subscription = invoice.subscription
-    ? await stripe.subscriptions.retrieve(invoice.subscription as string)
+  const stripe = getStripeClient();
+  const subscriptionId = invoice.parent?.subscription_details?.subscription as string | undefined;
+  const subscription = subscriptionId
+    ? await stripe.subscriptions.retrieve(subscriptionId)
     : null;
 
   await db.profile.updateMany({
@@ -150,7 +156,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     data: {
       minutesUsedThisCycle: 0,
       billingCycleStart: subscription
-        ? new Date(subscription.current_period_start * 1000)
+        ? new Date(subscription.billing_cycle_anchor * 1000)
         : new Date(),
     },
   });

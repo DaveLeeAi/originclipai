@@ -23,23 +23,23 @@ interface JobsListProps {
 }
 
 const SOURCE_LABELS: Record<string, string> = {
-  YOUTUBE_URL: 'YouTube',
-  VIDEO_URL: 'Video URL',
-  VIDEO_UPLOAD: 'Video',
-  AUDIO_UPLOAD: 'Audio',
-  ARTICLE_URL: 'Article',
-  PDF_UPLOAD: 'PDF',
+  youtube_url: 'YouTube',
+  video_url: 'Video URL',
+  video_upload: 'Video',
+  audio_upload: 'Audio',
+  article_url: 'Article',
+  pdf_upload: 'PDF',
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  CREATED: 'Queued',
-  INGESTING: 'Downloading',
-  TRANSCRIBING: 'Transcribing',
-  ANALYZING: 'Analyzing',
-  RENDERING: 'Rendering',
-  COMPLETE: 'Complete',
-  FAILED: 'Failed',
-  CANCELLED: 'Cancelled',
+  created: 'Queued',
+  ingesting: 'Downloading',
+  transcribing: 'Transcribing',
+  analyzing: 'Analyzing',
+  rendering: 'Rendering',
+  complete: 'Complete',
+  failed: 'Failed',
+  cancelled: 'Cancelled',
 };
 
 export function JobsList({ jobs }: JobsListProps) {
@@ -67,8 +67,8 @@ export function JobsList({ jobs }: JobsListProps) {
   return (
     <div className="space-y-2">
       {jobs.map((job) => {
-        const isActive = ['CREATED', 'INGESTING', 'TRANSCRIBING', 'ANALYZING', 'RENDERING'].includes(job.status);
-        const href = job.status === 'COMPLETE'
+        const isActive = ['created', 'ingesting', 'transcribing', 'analyzing', 'rendering'].includes(job.status);
+        const href = job.status === 'complete'
           ? `/jobs/${job.id}/review`
           : `/jobs/${job.id}`;
 
@@ -105,14 +105,14 @@ export function JobsList({ jobs }: JobsListProps) {
 
             {/* Status */}
             <div className="flex items-center gap-2">
-              {job.status === 'COMPLETE' && (
+              {job.status === 'complete' && (
                 <div className="flex gap-1.5">
                   <Badge variant="green">{job.clipCount} clips</Badge>
                   <Badge variant="cyan">{job.textOutputCount} text</Badge>
                 </div>
               )}
               <div className="flex items-center gap-1.5 rounded-lg border border-[#e4e2dd] bg-[#f6f5f2] px-2.5 py-1">
-                <StatusDot status={job.status.toLowerCase() as any} />
+                <StatusDot status={job.status as 'draft'} />
                 <span className={`text-[11px] font-semibold ${isActive ? 'text-[#5046e5]' : 'text-[#6b6960]'}`}>
                   {STATUS_LABELS[job.status] ?? job.status}
                 </span>

@@ -2,7 +2,6 @@
 
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import path from 'path';
 
 const execFileAsync = promisify(execFile);
 
@@ -51,7 +50,7 @@ export async function probeVideo(inputPath: string): Promise<ProbeResult> {
   ]);
 
   const data = JSON.parse(stdout);
-  const videoStream = data.streams?.find((s: any) => s.codec_type === 'video');
+  const videoStream = data.streams?.find((s: Record<string, unknown>) => s.codec_type === 'video');
 
   if (!videoStream) {
     throw new Error('No video stream found in file');

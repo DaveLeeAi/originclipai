@@ -41,7 +41,7 @@ export function ProgressChecklist({ jobId, sourceTitle, isTextOnly }: ProgressCh
     analyze: 'pending',
     render: 'pending',
   });
-  const [jobStatus, setJobStatus] = useState<string>('created');
+  const [, setJobStatus] = useState<string>('created');
   const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const router = useRouter();

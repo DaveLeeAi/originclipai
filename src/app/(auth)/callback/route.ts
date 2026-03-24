@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     {
       cookies: {
         getAll() { return cookieStore.getAll(); },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, options),
           );
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         email: data.user.email!,
         displayName: data.user.user_metadata?.full_name ?? data.user.user_metadata?.name ?? null,
         avatarUrl: data.user.user_metadata?.avatar_url ?? null,
-        plan: 'FREE',
+        plan: 'free',
         minutesLimit: 30,
         minutesUsedThisCycle: 0,
         billingCycleStart: new Date(),

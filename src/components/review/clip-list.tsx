@@ -88,7 +88,7 @@ export function ClipList({ clips, selectedId, onSelect }: ClipListProps) {
               <div className="flex items-center gap-2">
                 <SpeakerBadge
                   speaker={clip.speakerLabel}
-                  role={clip.speakerRole as any}
+                  role={clip.speakerRole as 'host' | 'guest' | 'co_host' | 'solo' | 'unknown'}
                 />
                 {clip.platforms.length > 0 && (
                   <div className="flex gap-1">

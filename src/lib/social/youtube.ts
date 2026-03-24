@@ -166,22 +166,28 @@ export class YouTubeAdapter implements SocialAdapter {
         platformPostId: videoId ?? undefined,
         platformPostUrl: videoId ? `https://youtube.com/shorts/${videoId}` : undefined,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Categorize YouTube API errors
-      const status = error?.response?.status;
-      const reason = error?.response?.data?.error?.errors?.[0]?.reason;
+      const err = error as Record<string, unknown>;
+      const response = err?.response as Record<string, unknown> | undefined;
+      const status = response?.status;
+      const data = response?.data as Record<string, unknown> | undefined;
+      const errorObj = data?.error as Record<string, unknown> | undefined;
+      const errors = errorObj?.errors as Array<Record<string, unknown>> | undefined;
+      const reason = errors?.[0]?.reason;
+      const message = error instanceof Error ? error.message : String(error);
 
       if (status === 401 || status === 403) {
-        return { success: false, error: error.message, errorCode: 'auth_expired' };
+        return { success: false, error: message, errorCode: 'auth_expired' };
       }
       if (status === 429 || reason === 'rateLimitExceeded') {
-        return { success: false, error: error.message, errorCode: 'rate_limit' };
+        return { success: false, error: message, errorCode: 'rate_limit' };
       }
       if (reason === 'uploadLimitExceeded' || reason === 'videoTooLong') {
-        return { success: false, error: error.message, errorCode: 'content_rejected' };
+        return { success: false, error: message, errorCode: 'content_rejected' };
       }
 
-      return { success: false, error: error.message, errorCode: 'unknown' };
+      return { success: false, error: message, errorCode: 'unknown' };
     }
   }
 

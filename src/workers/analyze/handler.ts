@@ -357,7 +357,7 @@ async function analyzeClips(
 
   try {
     return clipAnalysisPrompt.parseResponse(response.content);
-  } catch (firstError) {
+  } catch {
     console.warn("[analyze] Clip analysis parse failed, retrying...");
     const retryMessages = [
       ...messages,

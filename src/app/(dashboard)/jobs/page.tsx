@@ -17,7 +17,7 @@ export default async function DashboardPage() {
       id: true,
       sourceTitle: true,
       sourceType: true,
-      sourceDuration: true,
+      sourceDurationSeconds: true,
       status: true,
       clipCount: true,
       textOutputCount: true,
@@ -44,6 +44,7 @@ export default async function DashboardPage() {
       <JobsList
         jobs={jobs.map((j) => ({
           ...j,
+          sourceDuration: j.sourceDurationSeconds,
           createdAt: j.createdAt,
           completedAt: j.processingCompletedAt,
         }))}

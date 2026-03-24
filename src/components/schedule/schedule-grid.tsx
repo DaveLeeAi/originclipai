@@ -3,9 +3,9 @@
 
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Badge, PlatformIcon, StatusDot } from '@/components/ui/badge';
+import { PlatformIcon, StatusDot } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDuration, timeAgo } from '@/lib/utils';
+import { formatDuration } from '@/lib/utils';
 
 export interface ScheduleItem {
   id: string;

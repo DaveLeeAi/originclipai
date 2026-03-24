@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
 import { getStorageProvider } from "@/lib/providers/storage-supabase";
 import { z } from "zod";
-import type { AspectRatio } from "@/types";
 
 const querySchema = z.object({
   aspect: z.enum(["9x16", "1x1", "16x9"]).default("9x16"),

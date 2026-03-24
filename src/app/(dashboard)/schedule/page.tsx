@@ -30,7 +30,7 @@ export default function SchedulePage() {
         </p>
       </div>
       <ScheduleGrid
-        items={posts.map((p: any) => ({
+        items={posts.map((p: { id: string; clipId?: string; contentTitle?: string; platform: string; scheduledAt?: string; status: string; platformPostUrl?: string; error?: string }) => ({
           id: p.id,
           type: p.clipId ? 'clip' : 'text',
           title: p.contentTitle ?? 'Untitled',

@@ -27,7 +27,7 @@ export default function ReviewPage({ params }: Props) {
   const { refineText } = useRefineText();
 
   // Map API data to component types
-  const clipItems: ClipItem[] = clips.map((c: any) => ({
+  const clipItems: ClipItem[] = clips.map((c: { id: string; title: string; startTime: number; endTime: number; duration: number; score: number; primarySpeakerId?: string; speakerRole?: string; status: string; platforms?: string[]; renderStatus?: string }) => ({
     id: c.id,
     title: c.title,
     startTime: c.startTime,
@@ -37,12 +37,12 @@ export default function ReviewPage({ params }: Props) {
     primarySpeakerId: c.primarySpeakerId ?? '',
     speakerRole: c.speakerRole ?? 'unknown',
     speakerLabel: c.primarySpeakerId ?? 'Speaker',
-    status: c.status.toLowerCase(),
+    status: c.status.toLowerCase() as ClipItem['status'],
     platforms: c.platforms ?? [],
     renderStatus: c.renderStatus ?? 'pending',
   }));
 
-  const textItems: TextItem[] = textOutputs.map((t: any) => ({
+  const textItems: TextItem[] = textOutputs.map((t: { id: string; type: string; label: string; content: string; wordCount: number; status: string; platform?: string }) => ({
     id: t.id,
     type: t.type,
     label: t.label,
@@ -63,14 +63,14 @@ export default function ReviewPage({ params }: Props) {
   const navigateNext = useCallback(() => {
     if (currentIndex < currentItems.length - 1) {
       const nextId = currentItems[currentIndex + 1].id;
-      tab === 'clips' ? setSelectedClipId(nextId) : setSelectedTextId(nextId);
+      if (tab === 'clips') { setSelectedClipId(nextId); } else { setSelectedTextId(nextId); }
     }
   }, [currentIndex, currentItems, tab]);
 
   const navigatePrev = useCallback(() => {
     if (currentIndex > 0) {
       const prevId = currentItems[currentIndex - 1].id;
-      tab === 'clips' ? setSelectedClipId(prevId) : setSelectedTextId(prevId);
+      if (tab === 'clips') { setSelectedClipId(prevId); } else { setSelectedTextId(prevId); }
     }
   }, [currentIndex, currentItems, tab]);
 
@@ -109,11 +109,11 @@ export default function ReviewPage({ params }: Props) {
   };
 
   const handleApproveText = (textId: string) => {
-    // TODO: wire to API
+    void textId; // TODO: wire to API
   };
 
   const handleTogglePlatform = (clipId: string, platform: string) => {
-    // TODO: wire to API
+    void clipId; void platform; // TODO: wire to API
   };
 
   return (

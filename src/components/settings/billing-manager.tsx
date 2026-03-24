@@ -1,7 +1,6 @@
 // src/components/settings/billing-manager.tsx
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,9 +15,17 @@ interface BillingManagerProps {
   onManageBilling: () => void;
 }
 
-const PLANS = [
+const PLANS: Array<{
+  key: string;
+  name: string;
+  price: string;
+  period: string;
+  minutes: string;
+  popular?: boolean;
+  features: string[];
+}> = [
   {
-    key: 'FREE',
+    key: 'free',
     name: 'Free',
     price: '$0',
     period: 'forever',
@@ -26,7 +33,7 @@ const PLANS = [
     features: ['Watermarked clips', '720p export', 'Basic text outputs'],
   },
   {
-    key: 'CREATOR',
+    key: 'creator',
     name: 'Creator',
     price: '$19',
     period: '/mo',
@@ -34,7 +41,7 @@ const PLANS = [
     features: ['No watermark', '1080p', 'All outputs', 'Scheduling'],
   },
   {
-    key: 'PRO',
+    key: 'pro',
     name: 'Pro',
     price: '$39',
     period: '/mo',
@@ -43,7 +50,7 @@ const PLANS = [
     features: ['Everything in Creator', 'API access', 'Custom prompts', 'Priority processing'],
   },
   {
-    key: 'BUSINESS',
+    key: 'business',
     name: 'Business',
     price: '$79',
     period: '/mo',
@@ -113,7 +120,7 @@ export function BillingManager({
                   : 'border-[#e4e2dd] bg-white shadow-sm',
               )}
             >
-              {(plan as any).popular && !isCurrent && (
+              {plan.popular && !isCurrent && (
                 <Badge variant="accent" className="mb-2">Most popular</Badge>
               )}
               {isCurrent && (
@@ -149,7 +156,7 @@ export function BillingManager({
                   className="w-full"
                   onClick={() => onUpgrade(plan.key)}
                 >
-                  {isDowngrade ? 'Downgrade' : plan.key === 'FREE' ? 'Downgrade' : 'Upgrade'}
+                  {isDowngrade ? 'Downgrade' : plan.key === 'free' ? 'Downgrade' : 'Upgrade'}
                 </Button>
               )}
             </div>
@@ -158,7 +165,7 @@ export function BillingManager({
       </div>
 
       {/* Manage subscription */}
-      {currentPlan !== 'FREE' && (
+      {currentPlan !== 'free' && (
         <Card className="p-4 text-center">
           <p className="text-sm text-[#6b6960]">
             Need to update payment method, view invoices, or cancel?{' '}

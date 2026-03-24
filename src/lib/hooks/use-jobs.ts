@@ -118,7 +118,7 @@ export function useUsage() {
     minutesLimit: data?.minutesLimit ?? 30,
     minutesRemaining: data?.minutesRemaining ?? 30,
     percentUsed: data?.percentUsed ?? 0,
-    plan: data?.plan ?? 'FREE',
+    plan: data?.plan ?? 'free',
     isLoading,
     error,
   };

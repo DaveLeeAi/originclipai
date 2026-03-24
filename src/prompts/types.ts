@@ -1,6 +1,5 @@
 // src/prompts/types.ts
 
-import type { z } from 'zod';
 
 /**
  * Every prompt template must conform to this interface.

@@ -28,6 +28,7 @@ export async function POST(
 
     const body: unknown = await request.json();
     const input = refineSchema.parse(body);
+    void input;
 
     // TODO: Phase 4/5 — call LLM provider with:
     //   system: "You are a content editor. Refine the following text."

@@ -10,7 +10,7 @@ let _stripe: Stripe | null = null;
 function getStripe(): Stripe {
   if (!_stripe) {
     _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: '2024-12-18.acacia',
+      apiVersion: '2026-02-25.clover',
     });
   }
   return _stripe;
@@ -138,7 +138,7 @@ export async function canStartJob(
   const activeJobs = await db.job.count({
     where: {
       userId,
-      status: { in: ['CREATED', 'INGESTING', 'TRANSCRIBING', 'ANALYZING', 'RENDERING'] },
+      status: { in: ['created', 'ingesting', 'transcribing', 'analyzing', 'rendering'] },
     },
   });
 

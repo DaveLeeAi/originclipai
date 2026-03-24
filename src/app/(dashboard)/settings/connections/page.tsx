@@ -17,7 +17,7 @@ export default function ConnectionsPage() {
   };
 
   const handleReconnect = (id: string) => {
-    const conn = connections.find((c: any) => c.id === id);
+    const conn = connections.find((c: { id: string; platform: string }) => c.id === id);
     if (conn) handleConnect(conn.platform);
   };
 

@@ -7,7 +7,7 @@ import { TemplatesManager } from '@/components/settings/templates-manager';
 export default function TemplatesPage() {
   const { templates, refresh } = usePromptTemplates();
   const { plan } = useUsage();
-  const hasAccess = plan === 'PRO' || plan === 'BUSINESS';
+  const hasAccess = plan === 'pro' || plan === 'business';
 
   const handleSave = async (template: { name: string; outputType: string; promptText: string; description?: string }) => {
     await fetch('/api/v1/templates', {

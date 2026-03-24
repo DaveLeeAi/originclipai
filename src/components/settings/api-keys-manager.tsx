@@ -48,7 +48,7 @@ export function ApiKeysManager({
         </div>
         <h3 className="mb-2 text-base font-bold">API access requires Pro or Business</h3>
         <p className="mb-5 text-sm text-[#6b6960]">
-          You're on the {plan} plan. Upgrade to Pro ($39/mo) for self-serve API access with REST endpoints, webhooks, and automation integrations.
+          You&apos;re on the {plan} plan. Upgrade to Pro ($39/mo) for self-serve API access with REST endpoints, webhooks, and automation integrations.
         </p>
         <Button variant="primary" size="md">
           Upgrade to Pro
@@ -85,7 +85,7 @@ export function ApiKeysManager({
         <div className="mb-5 rounded-xl border border-[#16a34a]/20 bg-[#16a34a]/[0.04] p-4">
           <div className="mb-2 text-sm font-bold text-[#16a34a]">API key created</div>
           <p className="mb-3 text-xs text-[#6b6960]">
-            Copy this key now. You won't be able to see it again.
+            Copy this key now. You won&apos;t be able to see it again.
           </p>
           <div className="flex gap-2">
             <code className="flex-1 rounded-lg border border-[#e4e2dd] bg-white px-3 py-2 font-mono text-xs text-[#1a1a1a]">
@@ -99,7 +99,7 @@ export function ApiKeysManager({
             onClick={() => setCreatedKey(null)}
             className="mt-2 text-xs text-[#6b6960] hover:underline"
           >
-            I've saved this key — dismiss
+            I&apos;ve saved this key — dismiss
           </button>
         </div>
       )}

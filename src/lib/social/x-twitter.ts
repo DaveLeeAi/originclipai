@@ -170,8 +170,9 @@ export class XTwitterAdapter implements SocialAdapter {
       }
 
       return await this.publishSingleTweet(content.text, tokens);
-    } catch (error: any) {
-      return { success: false, error: error.message, errorCode: 'unknown' };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: message, errorCode: 'unknown' };
     }
   }
 
@@ -212,7 +213,7 @@ export class XTwitterAdapter implements SocialAdapter {
     let firstTweetId: string | undefined;
 
     for (let i = 0; i < posts.length; i++) {
-      const body: any = { text: posts[i].slice(0, 280) };
+      const body: Record<string, unknown> = { text: posts[i].slice(0, 280) };
 
       // Reply to previous tweet to form the thread
       if (previousTweetId) {

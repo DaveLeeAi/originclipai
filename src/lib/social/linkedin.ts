@@ -195,8 +195,9 @@ export class LinkedInAdapter implements SocialAdapter {
           ? `https://www.linkedin.com/feed/update/${postUrn}`
           : undefined,
       };
-    } catch (error: any) {
-      return { success: false, error: error.message, errorCode: 'unknown' };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: message, errorCode: 'unknown' };
     }
   }
 

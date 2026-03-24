@@ -68,7 +68,7 @@ export function ClipDetail({ clip, onApprove, onReject, onTogglePlatform }: Clip
       <div className="mb-5 flex flex-wrap gap-2">
         <Badge variant="default">{formatDuration(clip.duration)}</Badge>
         <ScorePill score={clip.score} />
-        <SpeakerBadge speaker={clip.speakerLabel} role={clip.speakerRole as any} />
+        <SpeakerBadge speaker={clip.speakerLabel} role={clip.speakerRole as 'host' | 'guest' | 'co_host' | 'solo' | 'unknown'} />
       </div>
 
       {/* Score breakdown */}

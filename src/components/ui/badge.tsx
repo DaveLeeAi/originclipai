@@ -45,7 +45,7 @@ export function ScorePill({ score }: ScorePillProps) {
 // --- STATUS DOT ---
 
 interface StatusDotProps {
-  status: 'approved' | 'review' | 'rejected' | 'draft' | 'queued' | 'posted' | 'failed' | 'posting';
+  status: 'approved' | 'review' | 'rejected' | 'draft' | 'queued' | 'posted' | 'failed' | 'posting' | 'scheduled';
   size?: 'sm' | 'md';
 }
 
@@ -58,6 +58,7 @@ const statusColors: Record<string, string> = {
   posted: 'bg-[#16a34a]',
   failed: 'bg-[#dc2626]',
   posting: 'bg-[#5046e5] animate-pulse',
+  scheduled: 'bg-[#5046e5]',
 };
 
 export function StatusDot({ status, size = 'sm' }: StatusDotProps) {

@@ -27,11 +27,11 @@ export default async function JobPage({ params }: Props) {
   if (!job) notFound();
 
   // If already complete, redirect to review
-  if (job.status === 'COMPLETE') {
+  if (job.status === 'complete') {
     redirect(`/jobs/${id}/review`);
   }
 
-  const isTextOnly = ['ARTICLE_URL', 'PDF_UPLOAD'].includes(job.sourceType);
+  const isTextOnly = ['article_url', 'pdf_upload'].includes(job.sourceType);
 
   return (
     <ProgressChecklist
