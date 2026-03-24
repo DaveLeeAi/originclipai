@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { clipAnalysisPrompt, clipAnalysisResponseSchema } from "@/prompts/clip-analysis";
+import { clipAnalysisPrompt, clipAnalysisResponseSchema } from "@/prompts";
 
 describe("clipAnalysisPrompt", () => {
   it("builds a user message with all parameters", () => {

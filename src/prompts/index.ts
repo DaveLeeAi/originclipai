@@ -23,4 +23,35 @@ export { customTemplatePrompt } from './custom-template';
 
 // Re-export types and schemas for convenience
 export type { PromptTemplate, SpeakerInfo, BaseContentParams } from './types';
-export * from './schemas';
+export {
+  clipAnalysisResponseSchema,
+  clipCandidateSchema,
+  scoreFactorsSchema,
+  speakerRoleResultSchema,
+  linkedinPostsResponseSchema,
+  linkedinPostSchema,
+  xThreadsResponseSchema,
+  xThreadSchema,
+  threadPostSchema,
+  newsletterSectionsResponseSchema,
+  newsletterSectionSchema,
+  summarySchema,
+  chapterMarkersSchema,
+  chapterMarkerSchema,
+  refinementResultSchema,
+  blogDraftSchema,
+} from './schemas';
+export type {
+  ClipCandidate,
+  ScoreFactors,
+  SpeakerRoleResult,
+  LinkedinPost,
+  XThread,
+  ThreadPost,
+  NewsletterSection,
+  Summary,
+  ChapterMarkers,
+  ChapterMarker,
+  RefinementResult,
+  BlogDraft,
+} from './schemas';

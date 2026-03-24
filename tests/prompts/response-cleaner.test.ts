@@ -60,13 +60,13 @@ describe("cleanLLMResponse", () => {
 
   it("throws on no JSON", () => {
     expect(() => cleanLLMResponse("no json here")).toThrow(
-      "No JSON found in LLM response",
+      "No JSON structure found",
     );
   });
 
   it("throws on malformed JSON (unclosed brackets)", () => {
     expect(() => cleanLLMResponse("[{")).toThrow(
-      "Malformed JSON in LLM response",
+      "Malformed JSON",
     );
   });
 

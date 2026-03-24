@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { linkedinPostsResponseSchema } from "@/prompts/linkedin-post";
-import { xThreadsResponseSchema } from "@/prompts/x-thread";
-import { newsletterSectionsResponseSchema } from "@/prompts/newsletter-section";
-import { summarySchema } from "@/prompts/summary";
-import { chapterMarkersSchema } from "@/prompts/chapter-markers";
-import { speakerRolesResponseSchema } from "@/prompts/speaker-roles";
+import {
+  linkedinPostsResponseSchema,
+  xThreadsResponseSchema,
+  newsletterSectionsResponseSchema,
+  summarySchema,
+  chapterMarkersSchema,
+  speakerRoleResultSchema,
+} from "@/prompts";
 
 describe("LinkedIn post schema", () => {
   it("validates well-formed posts", () => {
@@ -127,7 +129,7 @@ describe("Chapter markers schema", () => {
   it("rejects chapters with invalid timestamp format", () => {
     const invalid = {
       chapters: [
-        { timestamp: "00:00:00", title: "Introduction" }, // HH:MM:SS not valid
+        { timestamp: "abc", title: "Introduction" },
         { timestamp: "5:30", title: "Main" },
         { timestamp: "12:45", title: "End" },
       ],
@@ -154,7 +156,7 @@ describe("Speaker roles schema", () => {
         { id: "S2", role: "guest", confidence: 0.9, reasoning: "Answers questions" },
       ],
     };
-    expect(() => speakerRolesResponseSchema.parse(valid)).not.toThrow();
+    expect(() => speakerRoleResultSchema.parse(valid)).not.toThrow();
   });
 
   it("accepts solo role", () => {
@@ -163,6 +165,6 @@ describe("Speaker roles schema", () => {
         { id: "S1", role: "solo", confidence: 1.0, reasoning: "Only speaker" },
       ],
     };
-    expect(() => speakerRolesResponseSchema.parse(valid)).not.toThrow();
+    expect(() => speakerRoleResultSchema.parse(valid)).not.toThrow();
   });
 });

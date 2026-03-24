@@ -11,10 +11,11 @@ import {
   newsletterSectionPrompt,
   summaryPrompt,
   chapterMarkersPrompt,
-  type ClipCandidateOutput,
-  type SpeakerRoleOutput,
+  type ClipCandidate,
+  type SpeakerRoleResult,
 } from "@/prompts";
 import { formatDuration } from "@/lib/utils/duration";
+import type { LLMProvider } from "@/lib/providers/llm";
 import type { AnalyzeJobData, Speaker, TranscriptSegment, TextOutputType } from "@/types";
 
 const TEXT_ONLY_SOURCES = ["article_url", "pdf_upload"];
@@ -26,7 +27,7 @@ const TEXT_ONLY_SOURCES = ["article_url", "pdf_upload"];
  * For text-only: text generation only (no clips)
  */
 export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
-  const { jobId, transcriptId, sourceType } = data;
+  const { jobId, sourceType } = data;
 
   try {
     await updateJobStatus(jobId, "analyzing");
@@ -62,8 +63,8 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
 
         const first5MinText = getFirst5MinTranscript(segments);
         try {
-          const roles = await detectSpeakerRoles(llm, speakers, first5MinText);
-          speakers = applySpeakerRoles(speakers, roles);
+          const roleResult = await detectSpeakerRoles(llm, speakers, first5MinText, fullText.length);
+          speakers = applySpeakerRoles(speakers, roleResult);
 
           // Update transcript with detected roles
           await prisma.transcript.update({
@@ -135,10 +136,6 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
       substep: "text_generation",
     });
 
-    const speakerInfo = speakers
-      .map((s) => `${s.label} (${s.role}, ${s.talkTimePct}% talk time)`)
-      .join(", ");
-
     // Truncate content for text generation prompts (keep under ~100K chars)
     const contentForText = fullText.slice(0, 100_000);
 
@@ -146,7 +143,7 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
       sourceTitle: job.sourceTitle ?? "Untitled",
       sourceType,
       content: contentForText,
-      speakerInfo,
+      speakers,
       isTextOnly,
       durationSeconds,
       transcript: fullText,
@@ -214,17 +211,26 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
 // ─── Speaker Role Detection ─────────────────────────────────────────
 
 async function detectSpeakerRoles(
-  llm: ReturnType<typeof getLLMProvider>,
+  llm: LLMProvider,
   speakers: Speaker[],
   first5MinText: string,
-): Promise<SpeakerRoleOutput[]> {
+  fullTranscriptLength: number,
+): Promise<SpeakerRoleResult> {
+  const speakerInfo = speakers.map((s) => ({
+    id: s.id,
+    label: s.label,
+    talkTimePct: s.talkTimePct,
+    talkTimeSeconds: s.talkTimeSeconds,
+  }));
+
   const messages = [
     { role: "system" as const, content: speakerRolesPrompt.system },
     {
       role: "user" as const,
       content: speakerRolesPrompt.buildUserMessage({
-        speakers,
-        transcriptFirst5Min: first5MinText,
+        speakers: speakerInfo,
+        transcriptFirst5Minutes: first5MinText,
+        fullTranscriptLength,
       }),
     },
   ];
@@ -240,12 +246,12 @@ async function detectSpeakerRoles(
 
 function applySpeakerRoles(
   speakers: Speaker[],
-  roles: SpeakerRoleOutput[],
+  result: SpeakerRoleResult,
 ): Speaker[] {
   return speakers.map((s) => {
-    const detected = roles.find((r) => r.id === s.id);
+    const detected = result.speakers.find((r) => r.id === s.id);
     if (detected) {
-      const role = detected.role === "co-host" ? "host" : detected.role;
+      const role = detected.role === "co_host" ? "host" : detected.role;
       return { ...s, role: role as Speaker["role"] };
     }
     return s;
@@ -263,15 +269,27 @@ interface ClipAnalysisInput {
 }
 
 async function analyzeClips(
-  llm: ReturnType<typeof getLLMProvider>,
+  llm: LLMProvider,
   input: ClipAnalysisInput,
-): Promise<ClipCandidateOutput[]> {
+): Promise<ClipCandidate[]> {
+  const speakerInfo = input.speakers.map((s) => ({
+    id: s.id,
+    label: s.label,
+    role: s.role,
+    talkTimePct: s.talkTimePct,
+    talkTimeSeconds: s.talkTimeSeconds,
+  }));
+
   const messages = [
     { role: "system" as const, content: clipAnalysisPrompt.system },
     {
       role: "user" as const,
       content: clipAnalysisPrompt.buildUserMessage({
-        ...input,
+        sourceTitle: input.sourceTitle,
+        duration: input.duration,
+        contentType: input.contentType,
+        speakers: speakerInfo,
+        transcript: input.transcript,
         minDuration: 30,
         maxDuration: 90,
         targetClips: 15,
@@ -313,7 +331,7 @@ interface TextGenerationInput {
   sourceTitle: string;
   sourceType: string;
   content: string;
-  speakerInfo: string;
+  speakers: Speaker[];
   isTextOnly: boolean;
   durationSeconds: number;
   transcript: string;
@@ -329,7 +347,7 @@ interface TextOutputRecord {
 }
 
 async function generateAllTextOutputs(
-  llm: ReturnType<typeof getLLMProvider>,
+  llm: LLMProvider,
   input: TextGenerationInput,
 ): Promise<TextOutputRecord[]> {
   const results: TextOutputRecord[] = [];
@@ -362,7 +380,7 @@ async function generateAllTextOutputs(
 }
 
 async function generateLinkedinPosts(
-  llm: ReturnType<typeof getLLMProvider>,
+  llm: LLMProvider,
   input: TextGenerationInput,
 ): Promise<TextOutputRecord[]> {
   const messages = [
@@ -373,7 +391,12 @@ async function generateLinkedinPosts(
         sourceTitle: input.sourceTitle,
         sourceType: input.sourceType,
         content: input.content,
-        speakerInfo: input.speakerInfo,
+        speakers: input.speakers.map((s) => ({
+          id: s.id,
+          label: s.label,
+          role: s.role,
+          talkTimePct: s.talkTimePct,
+        })),
         count: 3,
       }),
     },
@@ -387,7 +410,7 @@ async function generateLinkedinPosts(
 
   const posts = linkedinPostPrompt.parseResponse(response.content);
   return posts.map((post, i) => ({
-    type: "linkedin_post",
+    type: "linkedin_post" as const,
     label: `LinkedIn Post ${i + 1}: ${post.focusTopic}`,
     content: post.content,
     wordCount: post.wordCount,
@@ -396,7 +419,7 @@ async function generateLinkedinPosts(
 }
 
 async function generateXThreads(
-  llm: ReturnType<typeof getLLMProvider>,
+  llm: LLMProvider,
   input: TextGenerationInput,
 ): Promise<TextOutputRecord[]> {
   const messages = [
@@ -405,6 +428,7 @@ async function generateXThreads(
       role: "user" as const,
       content: xThreadPrompt.buildUserMessage({
         sourceTitle: input.sourceTitle,
+        sourceType: input.sourceType,
         content: input.content,
         count: 2,
       }),
@@ -419,7 +443,7 @@ async function generateXThreads(
 
   const threads = xThreadPrompt.parseResponse(response.content);
   return threads.map((thread, i) => ({
-    type: "x_thread",
+    type: "x_thread" as const,
     label: `X Thread ${i + 1}: ${thread.focusTopic}`,
     content: thread.threadPosts.map((p) => p.text).join("\n\n"),
     wordCount: thread.wordCount,
@@ -429,7 +453,7 @@ async function generateXThreads(
 }
 
 async function generateNewsletterSections(
-  llm: ReturnType<typeof getLLMProvider>,
+  llm: LLMProvider,
   input: TextGenerationInput,
 ): Promise<TextOutputRecord[]> {
   const messages = [
@@ -439,7 +463,6 @@ async function generateNewsletterSections(
       content: newsletterSectionPrompt.buildUserMessage({
         sourceTitle: input.sourceTitle,
         sourceType: input.sourceType,
-        speakerInfo: input.speakerInfo,
         content: input.content,
         count: 2,
       }),
@@ -454,7 +477,7 @@ async function generateNewsletterSections(
 
   const sections = newsletterSectionPrompt.parseResponse(response.content);
   return sections.map((section, i) => ({
-    type: "newsletter_section",
+    type: "newsletter_section" as const,
     label: section.sectionTitle || `Newsletter Section ${i + 1}`,
     content: section.content,
     wordCount: section.wordCount,
@@ -463,7 +486,7 @@ async function generateNewsletterSections(
 }
 
 async function generateSummary(
-  llm: ReturnType<typeof getLLMProvider>,
+  llm: LLMProvider,
   input: TextGenerationInput,
 ): Promise<TextOutputRecord[]> {
   const messages = [
@@ -472,6 +495,7 @@ async function generateSummary(
       role: "user" as const,
       content: summaryPrompt.buildUserMessage({
         sourceTitle: input.sourceTitle,
+        sourceType: input.sourceType,
         content: input.content,
       }),
     },
@@ -486,7 +510,7 @@ async function generateSummary(
   const summary = summaryPrompt.parseResponse(response.content);
   return [
     {
-      type: "summary",
+      type: "summary" as const,
       label: "Summary",
       content: `${summary.summary}\n\nKey Insights:\n${summary.keyInsights.map((i) => `- ${i}`).join("\n")}`,
       wordCount: summary.wordCount,
@@ -496,7 +520,7 @@ async function generateSummary(
 }
 
 async function generateChapterMarkers(
-  llm: ReturnType<typeof getLLMProvider>,
+  llm: LLMProvider,
   input: TextGenerationInput,
 ): Promise<TextOutputRecord[]> {
   const messages = [
@@ -505,7 +529,8 @@ async function generateChapterMarkers(
       role: "user" as const,
       content: chapterMarkersPrompt.buildUserMessage({
         sourceTitle: input.sourceTitle,
-        duration: formatDuration(input.durationSeconds),
+        durationSeconds: input.durationSeconds,
+        durationFormatted: formatDuration(input.durationSeconds),
         transcript: input.transcript.slice(0, 50_000),
       }),
     },
@@ -523,7 +548,7 @@ async function generateChapterMarkers(
     .join("\n");
   return [
     {
-      type: "chapter_markers",
+      type: "chapter_markers" as const,
       label: "Chapter Markers",
       content: chapterText,
       wordCount: chapterText.split(/\s+/).length,

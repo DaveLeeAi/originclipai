@@ -73,10 +73,7 @@ export class AnthropicLLMProvider implements LLMProvider {
 
       const retryMessages: LLMMessage[] = [
         ...messages,
-        {
-          role: "assistant",
-          content: response.content,
-        },
+        { role: "assistant", content: response.content },
         {
           role: "user",
           content:
@@ -107,4 +104,9 @@ export function getLLMProvider(): LLMProvider {
     llmInstance = new AnthropicLLMProvider();
   }
   return llmInstance;
+}
+
+/** For testing — inject a mock provider */
+export function setLLMProvider(provider: LLMProvider): void {
+  llmInstance = provider as AnthropicLLMProvider;
 }
