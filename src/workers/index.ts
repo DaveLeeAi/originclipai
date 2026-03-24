@@ -9,10 +9,9 @@
 
 import { ingestWorker } from "./ingest";
 import { transcribeWorker } from "./transcribe";
+import { analyzeWorker } from "./analyze";
 
-// Phase 1 Week 2: ingest + transcribe workers
-// Phase 1 Week 3: analyze worker will be added here
-const workers = [ingestWorker, transcribeWorker];
+const workers = [ingestWorker, transcribeWorker, analyzeWorker];
 
 console.log(
   `OriginClipAI workers started: ${workers.map((w) => w.name).join(", ")}`,
