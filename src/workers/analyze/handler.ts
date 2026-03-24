@@ -10,6 +10,7 @@ import {
   type SpeakerRoleResult,
 } from "@/prompts";
 import { formatDuration } from "@/lib/utils/duration";
+import { isDevMockMode, logMock } from "@/lib/dev-mode";
 import type { LLMProvider } from "@/lib/providers/llm";
 import type { AnalyzeJobData, Speaker, TranscriptSegment, TextOutputType, WordTimestamp } from "@/types";
 
@@ -44,6 +45,28 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
     await updateJobProgress(jobId, "analyze", "running");
 
     const job = await prisma.job.findUniqueOrThrow({ where: { id: jobId } });
+
+    // Dedupe guard: if this job already has clips or text outputs, skip re-analysis.
+    // Prevents burning paid LLM calls on repeated runs of the same source.
+    // Pass FORCE_REANALYZE=true env var to override (for final verification).
+    const existingClips = await prisma.clip.count({ where: { jobId } });
+    const existingTexts = await prisma.textOutput.count({ where: { jobId } });
+    if ((existingClips > 0 || existingTexts > 0) && process.env.FORCE_REANALYZE !== "true") {
+      const msg = `Job ${jobId} already has ${existingClips} clips and ${existingTexts} text outputs — skipping re-analysis (set FORCE_REANALYZE=true to override)`;
+      if (isDevMockMode()) {
+        logMock("analyze", msg);
+      } else {
+        console.log(`[analyze] ${msg}`);
+      }
+      await updateJobProgress(jobId, "analyze", "complete", {
+        skipped: true,
+        existingClips,
+        existingTexts,
+      });
+      await updateJobStatus(jobId, "complete");
+      return;
+    }
+
     const isTextOnly = TEXT_ONLY_SOURCES.includes(sourceType);
     const llm = getLLMProvider();
 

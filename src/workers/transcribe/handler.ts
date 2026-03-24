@@ -4,6 +4,7 @@ import { analyzeQueue } from "@/lib/queue/queues";
 import { getTranscriptionProvider } from "@/lib/providers/transcription-factory";
 import { getStorageProvider } from "@/lib/providers/storage-supabase";
 import { filterHallucinations } from "./hallucination-filter";
+import { isNoExternalAPIs, logMock } from "@/lib/dev-mode";
 import type { TranscribeJobData } from "@/types";
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -47,42 +48,51 @@ export async function handleTranscribeJob(data: TranscribeJobData): Promise<void
       substep: "preparing_audio",
     });
 
-    const storage = getStorageProvider();
-    const audioUrl = await getAudioUrl(storage, sourceFileKey, jobId);
-
-    // Step 2: Run transcription
-    await updateJobProgress(jobId, "transcribe", "running", {
-      substep: "transcribing",
-    });
-
     let provider = getTranscriptionProvider(engine);
     let result;
 
-    try {
-      result = await provider.transcribe(audioUrl, {
+    if (isNoExternalAPIs()) {
+      // Mock mode: skip storage/ffmpeg entirely, use fixture data
+      logMock("transcribe", `Skipping audio preparation — using mock transcription for job ${jobId}`);
+      result = await provider.transcribe("mock://fixture", {
         language,
         enableDiarization: true,
       });
-    } catch (primaryError) {
-      // Fallback to AssemblyAI if Whisper fails
-      if (engine === "whisper") {
-        console.warn(
-          `[transcribe] Whisper failed for job ${jobId}, falling back to AssemblyAI:`,
-          primaryError instanceof Error ? primaryError.message : primaryError,
-        );
+    } else {
+      const storage = getStorageProvider();
+      const audioUrl = await getAudioUrl(storage, sourceFileKey, jobId);
 
-        provider = getTranscriptionProvider("assemblyai");
-        const isAvailable = await provider.isAvailable();
-        if (!isAvailable) {
-          throw primaryError; // No fallback available, re-throw original
-        }
+      // Step 2: Run transcription
+      await updateJobProgress(jobId, "transcribe", "running", {
+        substep: "transcribing",
+      });
 
+      try {
         result = await provider.transcribe(audioUrl, {
           language,
           enableDiarization: true,
         });
-      } else {
-        throw primaryError;
+      } catch (primaryError) {
+        // Fallback to AssemblyAI if Whisper fails
+        if (engine === "whisper") {
+          console.warn(
+            `[transcribe] Whisper failed for job ${jobId}, falling back to AssemblyAI:`,
+            primaryError instanceof Error ? primaryError.message : primaryError,
+          );
+
+          provider = getTranscriptionProvider("assemblyai");
+          const isAvailable = await provider.isAvailable();
+          if (!isAvailable) {
+            throw primaryError; // No fallback available, re-throw original
+          }
+
+          result = await provider.transcribe(audioUrl, {
+            language,
+            enableDiarization: true,
+          });
+        } else {
+          throw primaryError;
+        }
       }
     }
 

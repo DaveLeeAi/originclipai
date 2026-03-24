@@ -17,7 +17,19 @@ interface QueueConfig {
   timeout: number;
 }
 
-export const QUEUE_CONFIG: Record<QueueName, QueueConfig> = {
+/** Queues that call paid external APIs (transcription, LLM). */
+const PAID_QUEUES: QueueName[] = ["transcribe", "analyze"];
+
+/**
+ * When MOCK_AI or DEV_NO_EXTERNAL_APIS is set, disable automatic retries
+ * for paid queues so failures surface immediately instead of silently
+ * retrying and accumulating cost.
+ */
+function isDevMockMode(): boolean {
+  return process.env.MOCK_AI === "true" || process.env.DEV_NO_EXTERNAL_APIS === "true";
+}
+
+const PRODUCTION_CONFIG: Record<QueueName, QueueConfig> = {
   ingest: {
     name: "ingest",
     concurrency: 5,
@@ -61,3 +73,25 @@ export const QUEUE_CONFIG: Record<QueueName, QueueConfig> = {
     timeout: 300_000,
   },
 };
+
+function buildQueueConfig(): Record<QueueName, QueueConfig> {
+  if (!isDevMockMode()) return PRODUCTION_CONFIG;
+
+  const config = { ...PRODUCTION_CONFIG };
+  for (const queueName of PAID_QUEUES) {
+    config[queueName] = {
+      ...config[queueName],
+      attempts: 1, // No retries — fail fast in dev
+    };
+  }
+
+  if (isDevMockMode()) {
+    console.log(
+      `[queue] Dev mock mode: retries disabled for paid queues (${PAID_QUEUES.join(", ")})`,
+    );
+  }
+
+  return config;
+}
+
+export const QUEUE_CONFIG: Record<QueueName, QueueConfig> = buildQueueConfig();

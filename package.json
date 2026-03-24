@@ -9,8 +9,8 @@
     "lint": "next lint && prettier --check .",
     "lint:fix": "next lint --fix && prettier --write .",
     "typecheck": "tsc --noEmit",
-    "workers": "tsx src/workers/index.ts",
-    "workers:dev": "tsx watch src/workers/index.ts",
+    "workers": "tsx --env-file=.env.local src/workers/index.ts",
+    "workers:dev": "tsx watch --env-file=.env.local src/workers/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "prisma generate",
@@ -18,7 +18,9 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-dev": "tsx scripts/seed-dev.ts",
-    "db:studio": "prisma studio"
+    "db:seed-demo": "tsx --env-file=.env.local scripts/seed-demo.ts",
+    "db:studio": "prisma studio",
+    "render-clip": "tsx scripts/render-clip.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",
