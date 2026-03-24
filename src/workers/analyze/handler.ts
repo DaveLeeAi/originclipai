@@ -12,6 +12,7 @@ import {
   newsletterSectionPrompt,
   summaryPrompt,
   chapterMarkersPrompt,
+  customTemplatePrompt,
   type ClipCandidate,
   type SpeakerRoleResult,
 } from "@/prompts";
@@ -171,15 +172,100 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
       });
     }
 
-    // Update job text output count
+    // Step 4: Execute user's active custom prompt templates
+    let customOutputCount = 0;
+    try {
+      const customTemplates = await prisma.promptTemplate.findMany({
+        where: { userId: job.userId, isActive: true },
+      });
+
+      if (customTemplates.length > 0) {
+        await updateJobProgress(jobId, "analyze", "running", {
+          substep: "custom_templates",
+          customTemplatesTotal: customTemplates.length,
+        });
+
+        for (const template of customTemplates) {
+          try {
+            const messages = [
+              { role: "system" as const, content: customTemplatePrompt.system },
+              {
+                role: "user" as const,
+                content: customTemplatePrompt.buildUserMessage({
+                  sourceTitle: job.sourceTitle ?? "Untitled",
+                  sourceType,
+                  content: contentForText,
+                  speakers: speakers.map((s) => ({
+                    id: s.id,
+                    label: s.label,
+                    role: s.role,
+                    talkTimePct: s.talkTimePct,
+                  })),
+                  templateName: template.name,
+                  templatePrompt: template.promptText,
+                }),
+              },
+            ];
+
+            const response = await llm.chat(messages, {
+              model: customTemplatePrompt.model,
+              temperature: customTemplatePrompt.temperature,
+              maxTokens: customTemplatePrompt.maxTokens,
+            });
+
+            const result = customTemplatePrompt.parseResponse(response.content);
+
+            await prisma.textOutput.create({
+              data: {
+                jobId,
+                type: template.outputType,
+                label: template.name,
+                content: result.content,
+                wordCount: result.wordCount,
+                promptTemplateId: template.id,
+                metadata: JSON.parse(
+                  JSON.stringify({ promptVersion: customTemplatePrompt.version, templateId: template.id }),
+                ),
+                sortOrder: textSortOrder++,
+              },
+            });
+
+            // Increment template usage count
+            await prisma.promptTemplate.update({
+              where: { id: template.id },
+              data: { usageCount: { increment: 1 } },
+            });
+
+            customOutputCount++;
+          } catch (templateErr) {
+            console.warn(
+              `[analyze] Custom template "${template.name}" (${template.id}) failed for job ${jobId}:`,
+              templateErr,
+            );
+            // Non-fatal — continue with remaining custom templates
+          }
+        }
+      }
+    } catch (customErr) {
+      console.warn(
+        `[analyze] Failed to fetch/execute custom templates for job ${jobId}:`,
+        customErr,
+      );
+      // Non-fatal — default text outputs already saved
+    }
+
+    const totalTextOutputs = textResults.length + customOutputCount;
+
+    // Update job text output count (includes both default and custom outputs)
     await prisma.job.update({
       where: { id: jobId },
-      data: { textOutputCount: textResults.length },
+      data: { textOutputCount: totalTextOutputs },
     });
 
     await updateJobProgress(jobId, "analyze", "complete", {
       clipsFound: isTextOnly ? 0 : undefined,
-      textsGenerated: textResults.length,
+      textsGenerated: totalTextOutputs,
+      customTemplatesRun: customOutputCount,
     });
 
     if (isTextOnly) {
@@ -189,7 +275,7 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
       await fireJobCompletedWebhook(jobId, {
         status: "complete",
         clipCount: 0,
-        textOutputCount: textResults.length,
+        textOutputCount: totalTextOutputs,
         sourceTitle: job.sourceTitle,
       }).catch((err) => {
         console.warn(`[analyze] Webhook dispatch failed for job ${jobId}:`, err);
