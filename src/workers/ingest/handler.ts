@@ -3,6 +3,7 @@ import { updateJobProgress, updateJobStatus } from "@/lib/db/job-progress";
 import { transcribeQueue } from "@/lib/queue/queues";
 import { getStorageProvider } from "@/lib/providers/storage-supabase";
 import type { IngestJobData, SourceType } from "@/types";
+import { requireBinary, BinaryNotFoundError } from "@/lib/utils/binary-check";
 import { exec } from "child_process";
 import { promisify } from "util";
 import * as fs from "fs/promises";
@@ -95,7 +96,7 @@ export async function handleIngestJob(data: IngestJobData): Promise<void> {
     // Enqueue the next pipeline step
     await enqueueNextStep(jobId, sourceType, resultKey);
   } catch (error) {
-    if (error instanceof PermanentError) {
+    if (error instanceof PermanentError || error instanceof BinaryNotFoundError) {
       // Permanent failure — mark failed, do not retry
       await updateJobProgress(jobId, "ingest", "error").catch(() => {});
       await updateJobStatus(jobId, "failed", error.message).catch(() => {});
@@ -133,6 +134,8 @@ async function downloadYouTube(
   jobId: string,
   url: string,
 ): Promise<IngestResult> {
+  await requireBinary("yt-dlp", "ingest:youtube");
+
   const tempDir = path.join(os.tmpdir(), `ingest-${jobId}`);
   await fs.mkdir(tempDir, { recursive: true });
 

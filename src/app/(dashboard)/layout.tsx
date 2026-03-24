@@ -1,7 +1,7 @@
 // src/app/(dashboard)/layout.tsx
 
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/auth/server';
+import { getUser } from '@/lib/auth/server';
 import { AppShell } from '@/components/layout/app-shell';
 import { OnboardingWrapper } from '@/components/onboarding/onboarding-wrapper';
 import { db } from '@/lib/db/client';
@@ -11,8 +11,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!user) {
     redirect('/sign-in');

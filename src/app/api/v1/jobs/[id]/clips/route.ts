@@ -38,6 +38,8 @@ export async function GET(
         status: true,
         socialCaption: true,
         hashtags: true,
+        platforms: true,
+        renderStatus: true,
         sortOrder: true,
         createdAt: true,
       },

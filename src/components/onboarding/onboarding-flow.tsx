@@ -32,17 +32,25 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
     setIsProcessing(true);
 
     try {
+      // Detect source type from URL
+      const isYouTube = /youtube\.com\/watch|youtu\.be\/|youtube\.com\/shorts/.test(targetUrl);
+      const sourceType = isYouTube ? 'youtube_url' : 'article_url';
+
       const res = await fetch('/api/v1/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: targetUrl }),
+        body: JSON.stringify({ sourceType, sourceUrl: targetUrl }),
       });
 
-      if (!res.ok) throw new Error('Failed to create job');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? 'Failed to create job');
+      }
 
       const { jobId } = await res.json();
       router.push(`/jobs/${jobId}`);
-    } catch {
+    } catch (err) {
+      console.error('[onboarding] Job creation failed:', err);
       setIsProcessing(false);
     }
   };

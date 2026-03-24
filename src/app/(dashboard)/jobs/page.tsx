@@ -1,13 +1,12 @@
 // src/app/(dashboard)/page.tsx
 
-import { createClient } from '@/lib/auth/server';
+import { getUser } from '@/lib/auth/server';
 import { db } from '@/lib/db/client';
 import { JobsList } from '@/components/jobs/jobs-list';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUser();
 
   const jobs = await db.job.findMany({
     where: { userId: user!.id },

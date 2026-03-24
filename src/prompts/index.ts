@@ -21,6 +21,11 @@ export { chapterMarkersPrompt } from './chapter-markers';
 export { textRefinementPrompt } from './text-refinement';
 export { customTemplatePrompt } from './custom-template';
 
+// New intelligence prompts
+export { keyInsightsPrompt } from './key-insights';
+export { notableQuotesPrompt } from './notable-quotes';
+export { hookTitlePrompt } from './hook-title';
+
 // Re-export types and schemas for convenience
 export type { PromptTemplate, SpeakerInfo, BaseContentParams } from './types';
 export {
@@ -55,3 +60,27 @@ export type {
   RefinementResult,
   BlogDraft,
 } from './schemas';
+
+// Intelligence layer schemas
+export {
+  expandedScoreFactorsSchema,
+  SCORE_WEIGHTS,
+  scoredClipCandidateSchema,
+  scoredClipResponseSchema,
+  keyInsightSchema,
+  keyInsightsResponseSchema,
+  notableQuoteSchema,
+  notableQuotesResponseSchema,
+  hookTitlePairSchema,
+  hookTitleResponseSchema,
+} from './schemas/intelligence';
+export type {
+  ExpandedScoreFactors,
+  ScoredClipCandidate,
+  KeyInsight,
+  KeyInsightsResponse,
+  NotableQuote,
+  NotableQuotesResponse,
+  HookTitlePair,
+  HookTitleResponse,
+} from './schemas/intelligence';

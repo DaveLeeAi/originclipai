@@ -17,6 +17,7 @@
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs/promises";
+import { requireBinary, BinaryNotFoundError } from "@/lib/utils/binary-check";
 import { prisma } from "@/lib/db/client";
 import { updateJobProgress, updateJobStatus } from "@/lib/db/job-progress";
 import { getStorageProvider } from "@/lib/providers/storage-supabase";
@@ -71,6 +72,8 @@ export async function handleRenderJob(data: RenderJobData): Promise<void> {
     wordTimestamps,
     speakerColors,
   } = data;
+
+  await requireBinary("ffmpeg", "render:clip");
 
   const tempDir = path.join(os.tmpdir(), `render-${clipId}`);
   await fs.mkdir(tempDir, { recursive: true });
@@ -199,6 +202,13 @@ export async function handleRenderJob(data: RenderJobData): Promise<void> {
     await updateJobProgress(jobId, "render", "error").catch(() => {});
 
     console.error(`[render] Clip ${clipId} render failed:`, error);
+
+    // Binary not found is permanent — fail the whole job immediately, don't retry
+    if (error instanceof BinaryNotFoundError) {
+      await updateJobStatus(jobId, "failed", error.message).catch(() => {});
+      return;
+    }
+
     throw error;
   } finally {
     // Always clean up temp files

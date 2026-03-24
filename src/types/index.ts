@@ -31,6 +31,8 @@ export type TextOutputType =
   | "social_caption"
   | "blog_draft"
   | "show_notes"
+  | "key_insight"
+  | "notable_quote"
   | "custom";
 
 export type TextOutputStatus = "draft" | "approved" | "scheduled" | "posted";

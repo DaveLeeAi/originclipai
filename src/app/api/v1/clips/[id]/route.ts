@@ -6,6 +6,7 @@ const updateClipSchema = z.object({
   status: z.enum(["review", "approved", "rejected"]).optional(),
   title: z.string().min(1).max(200).optional(),
   socialCaption: z.string().max(500).optional(),
+  platforms: z.array(z.enum(["youtube", "tiktok", "linkedin", "x", "instagram", "facebook"])).optional(),
 });
 
 /**
@@ -37,12 +38,16 @@ export async function PATCH(
         ...(input.socialCaption !== undefined
           ? { socialCaption: input.socialCaption }
           : {}),
+        ...(input.platforms !== undefined
+          ? { platforms: input.platforms }
+          : {}),
       },
       select: {
         id: true,
         status: true,
         title: true,
         socialCaption: true,
+        platforms: true,
         score: true,
         startTime: true,
         endTime: true,

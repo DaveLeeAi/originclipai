@@ -27,6 +27,8 @@ const typeIcons: Record<string, string> = {
   summary: 'summary',
   chapter_markers: 'chapters',
   blog_draft: 'blog',
+  key_insight: 'insight',
+  notable_quote: 'quote',
   custom: 'custom',
 };
 
@@ -65,6 +67,19 @@ export function TextList({ items, selectedId, onSelect }: TextListProps) {
                 <svg className="text-[#5046e5]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                   <polyline points="22 6 12 13 2 6" />
+                </svg>
+              )}
+              {iconPlatform === 'insight' && (
+                <svg className="text-[#d97706]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+              )}
+              {iconPlatform === 'quote' && (
+                <svg className="text-[#059669]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z" />
+                  <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z" />
                 </svg>
               )}
               <span className="text-[13px] font-bold text-[#1a1a1a]">{item.label}</span>

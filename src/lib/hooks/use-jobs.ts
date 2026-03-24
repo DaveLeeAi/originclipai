@@ -82,7 +82,7 @@ export function useTextOutputs(jobId: string | null) {
   );
 
   return {
-    textOutputs: data?.textOutputs ?? [],
+    textOutputs: data?.texts ?? data?.textOutputs ?? [],
     isLoading,
     error,
     refresh: mutate,

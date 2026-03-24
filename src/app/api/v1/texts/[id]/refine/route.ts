@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/client';
 import { z } from 'zod';
+import { getLLMProvider, isLLMAvailable } from '@/lib/providers/llm-anthropic';
+import { textRefinementPrompt } from '@/prompts';
 
 const refineSchema = z.object({
   instruction: z.string().min(1).max(500),
@@ -9,8 +11,8 @@ const refineSchema = z.object({
 /**
  * POST /api/v1/texts/:id/refine — Refine text output with AI.
  *
- * Phase 3 stub: applies basic instruction-driven transformations.
- * Phase 5 will call the LLM provider with the instruction as a user message.
+ * Calls the LLM provider with the refinement prompt template.
+ * Falls back to returning the original content if LLM is unavailable.
  */
 export async function POST(
   request: Request,
@@ -20,7 +22,7 @@ export async function POST(
     const { id } = await params;
     const text = await prisma.textOutput.findUnique({
       where: { id },
-      select: { id: true, content: true },
+      select: { id: true, content: true, type: true },
     });
 
     if (!text) {
@@ -29,24 +31,41 @@ export async function POST(
 
     const body: unknown = await request.json();
     const input = refineSchema.parse(body);
-    void input;
 
-    // TODO: Phase 4/5 — call LLM provider with:
-    //   system: "You are a content editor. Refine the following text."
-    //   user: `Instruction: ${input.instruction}\n\nOriginal text:\n${text.content}`
-    //
-    // For now, return original content with a note that LLM refinement is pending.
-    // This allows the UI to be fully wired and tested.
+    let refinedText = text.content;
+    let wordCount = text.content.split(/\s+/).filter(Boolean).length;
 
-    const refined = text.content;
-    const wordCount = refined.split(/\s+/).filter(Boolean).length;
+    if (isLLMAvailable()) {
+      const llm = getLLMProvider();
+      const messages = [
+        { role: 'system' as const, content: textRefinementPrompt.system },
+        {
+          role: 'user' as const,
+          content: textRefinementPrompt.buildUserMessage({
+            currentText: text.content,
+            outputType: text.type,
+            instruction: input.instruction,
+          }),
+        },
+      ];
+
+      const response = await llm.chat(messages, {
+        model: textRefinementPrompt.model,
+        temperature: textRefinementPrompt.temperature,
+        maxTokens: textRefinementPrompt.maxTokens,
+      });
+
+      const result = textRefinementPrompt.parseResponse(response.content);
+      refinedText = result.refinedText;
+      wordCount = result.wordCount;
+    }
 
     await prisma.textOutput.update({
       where: { id },
-      data: { content: refined, wordCount },
+      data: { content: refinedText, wordCount },
     });
 
-    return NextResponse.json({ content: refined, wordCount });
+    return NextResponse.json({ refinedText, wordCount });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

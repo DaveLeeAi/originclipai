@@ -71,11 +71,18 @@ export async function GET(
 
           // Close on terminal state
           if (TERMINAL_STATES.includes(currentJob.status)) {
-            sendEvent("done", {
-              status: currentJob.status,
-              clipCount: currentJob.clipCount,
-              textOutputCount: currentJob.textOutputCount,
-            });
+            if (currentJob.status === "failed" || currentJob.status === "cancelled") {
+              sendEvent("error", {
+                message: currentJob.error ?? `Job ${currentJob.status}`,
+                status: currentJob.status,
+              });
+            } else {
+              sendEvent("done", {
+                status: currentJob.status,
+                clipCount: currentJob.clipCount,
+                textOutputCount: currentJob.textOutputCount,
+              });
+            }
             controller.close();
             return;
           }

@@ -1,28 +1,44 @@
 // src/workers/render/ffmpeg.ts
 
+/**
+ * FFmpeg execution layer.
+ * Delegates command construction to ffmpeg-command.ts, then executes.
+ * This module owns the child_process calls; ffmpeg-command.ts is pure and testable.
+ */
+
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import {
+  buildProbeArgs,
+  buildExtractClipArgs,
+  buildRenderArgs,
+  buildRenderFromExtractedArgs,
+  buildExtractAudioArgs,
+  type CropRect,
+  type RenderCommandOptions,
+} from './ffmpeg-command';
+
+// Re-export types and pure functions from the command builder
+// so existing imports from this module continue to work.
+export {
+  type AspectRatio,
+  type CropRect,
+  getTargetDimensions,
+  calculateCropRect,
+  escapeFfmpegPath,
+} from './ffmpeg-command';
 
 const execFileAsync = promisify(execFile);
-
-export type AspectRatio = '9x16' | '1x1' | '16x9';
-
-interface CropRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
 
 interface RenderOptions {
   inputPath: string;
   outputPath: string;
   startTime: number;
   endTime: number;
-  aspectRatio: AspectRatio;
+  aspectRatio: RenderCommandOptions['aspectRatio'];
   crop?: CropRect;
-  subtitlePath?: string; // ASS subtitle file for caption overlay
-  maxHeight?: number; // Default: 1920 for 9:16, 1080 for others
+  subtitlePath?: string;
+  maxHeight?: number;
 }
 
 interface ProbeResult {
@@ -41,13 +57,8 @@ interface ProbeResult {
  * Get video file metadata using FFprobe.
  */
 export async function probeVideo(inputPath: string): Promise<ProbeResult> {
-  const { stdout } = await execFileAsync('ffprobe', [
-    '-v', 'quiet',
-    '-print_format', 'json',
-    '-show_streams',
-    '-show_format',
-    inputPath,
-  ]);
+  const args = buildProbeArgs({ inputPath });
+  const { stdout } = await execFileAsync('ffprobe', args);
 
   const data = JSON.parse(stdout);
   const videoStream = data.streams?.find((s: Record<string, unknown>) => s.codec_type === 'video');
@@ -82,79 +93,8 @@ export async function extractClip(
   startTime: number,
   endTime: number,
 ): Promise<void> {
-  const duration = endTime - startTime;
-
-  await execFileAsync('ffmpeg', [
-    '-y',
-    '-ss', startTime.toFixed(3),
-    '-i', inputPath,
-    '-t', duration.toFixed(3),
-    '-c', 'copy',
-    '-avoid_negative_ts', 'make_zero',
-    outputPath,
-  ]);
-}
-
-// ============================================================
-// ASPECT RATIO DIMENSIONS
-// ============================================================
-
-/**
- * Get target dimensions for an aspect ratio.
- * All targets are 1080p equivalent.
- */
-export function getTargetDimensions(aspectRatio: AspectRatio): { width: number; height: number } {
-  switch (aspectRatio) {
-    case '9x16': return { width: 1080, height: 1920 };
-    case '1x1':  return { width: 1080, height: 1080 };
-    case '16x9': return { width: 1920, height: 1080 };
-  }
-}
-
-/**
- * Calculate crop rectangle to achieve target aspect ratio.
- * Centers on the provided face position, or centers the frame if no face.
- */
-export function calculateCropRect(
-  sourceWidth: number,
-  sourceHeight: number,
-  aspectRatio: AspectRatio,
-  faceCenterX?: number,
-  faceCenterY?: number,
-): CropRect {
-  const target = getTargetDimensions(aspectRatio);
-  const targetAspect = target.width / target.height;
-  const sourceAspect = sourceWidth / sourceHeight;
-
-  let cropW: number;
-  let cropH: number;
-
-  if (sourceAspect > targetAspect) {
-    // Source is wider than target — crop width
-    cropH = sourceHeight;
-    cropW = Math.round(sourceHeight * targetAspect);
-  } else {
-    // Source is taller than target — crop height
-    cropW = sourceWidth;
-    cropH = Math.round(sourceWidth / targetAspect);
-  }
-
-  // Ensure crop dimensions are even (FFmpeg requirement)
-  cropW = cropW - (cropW % 2);
-  cropH = cropH - (cropH % 2);
-
-  // Center on face if available, otherwise center of frame
-  const centerX = faceCenterX ?? sourceWidth / 2;
-  const centerY = faceCenterY ?? sourceHeight / 2;
-
-  let x = Math.round(centerX - cropW / 2);
-  let y = Math.round(centerY - cropH / 2);
-
-  // Clamp to frame boundaries
-  x = Math.max(0, Math.min(x, sourceWidth - cropW));
-  y = Math.max(0, Math.min(y, sourceHeight - cropH));
-
-  return { x, y, w: cropW, h: cropH };
+  const args = buildExtractClipArgs({ inputPath, outputPath, startTime, endTime });
+  await execFileAsync('ffmpeg', args);
 }
 
 // ============================================================
@@ -166,62 +106,17 @@ export function calculateCropRect(
  * This is the main render function — produces the final output.
  */
 export async function renderClip(options: RenderOptions): Promise<void> {
-  const {
-    inputPath,
-    outputPath,
-    startTime,
-    endTime,
-    aspectRatio,
-    crop,
-    subtitlePath,
-  } = options;
+  const args = buildRenderArgs({
+    inputPath: options.inputPath,
+    outputPath: options.outputPath,
+    startTime: options.startTime,
+    endTime: options.endTime,
+    aspectRatio: options.aspectRatio,
+    crop: options.crop,
+    subtitlePath: options.subtitlePath,
+  });
 
-  const target = getTargetDimensions(aspectRatio);
-  const duration = endTime - startTime;
-
-  // Build filter chain
-  const filters: string[] = [];
-
-  // 1. Trim (if not already extracted)
-  // Using -ss and -t is faster, but filter-based trim is more precise
-  filters.push(`trim=start=${startTime.toFixed(3)}:duration=${duration.toFixed(3)},setpts=PTS-STARTPTS`);
-
-  // 2. Crop (reframe)
-  if (crop) {
-    filters.push(`crop=${crop.w}:${crop.h}:${crop.x}:${crop.y}`);
-  }
-
-  // 3. Scale to target dimensions
-  filters.push(`scale=${target.width}:${target.height}:force_original_aspect_ratio=decrease`);
-
-  // 4. Pad to exact dimensions (if scale didn't match exactly)
-  filters.push(`pad=${target.width}:${target.height}:(ow-iw)/2:(oh-ih)/2:color=black`);
-
-  // 5. Subtitle overlay (if captions provided)
-  if (subtitlePath) {
-    // ASS subtitles are rendered via the ass filter
-    // The subtitle file must use absolute positioning that accounts for the target resolution
-    filters.push(`ass=${escapeFfmpegPath(subtitlePath)}`);
-  }
-
-  const videoFilter = filters.join(',');
-
-  const args = [
-    '-y',
-    '-i', inputPath,
-    '-vf', videoFilter,
-    '-af', `atrim=start=${startTime.toFixed(3)}:duration=${duration.toFixed(3)},asetpts=PTS-STARTPTS`,
-    '-c:v', 'libx264',
-    '-preset', 'medium',
-    '-crf', '23',
-    '-c:a', 'aac',
-    '-b:a', '128k',
-    '-movflags', '+faststart',
-    '-r', '30', // Normalize to 30fps
-    outputPath,
-  ];
-
-  await execFileAsync('ffmpeg', args, { timeout: 600_000 }); // 10 min timeout
+  await execFileAsync('ffmpeg', args, { timeout: 600_000 });
 }
 
 /**
@@ -231,37 +126,17 @@ export async function renderClip(options: RenderOptions): Promise<void> {
 export async function renderFromExtracted(
   inputPath: string,
   outputPath: string,
-  aspectRatio: AspectRatio,
+  aspectRatio: RenderCommandOptions['aspectRatio'],
   crop?: CropRect,
   subtitlePath?: string,
 ): Promise<void> {
-  const target = getTargetDimensions(aspectRatio);
-  const filters: string[] = [];
-
-  if (crop) {
-    filters.push(`crop=${crop.w}:${crop.h}:${crop.x}:${crop.y}`);
-  }
-
-  filters.push(`scale=${target.width}:${target.height}:force_original_aspect_ratio=decrease`);
-  filters.push(`pad=${target.width}:${target.height}:(ow-iw)/2:(oh-ih)/2:color=black`);
-
-  if (subtitlePath) {
-    filters.push(`ass=${escapeFfmpegPath(subtitlePath)}`);
-  }
-
-  const args = [
-    '-y',
-    '-i', inputPath,
-    '-vf', filters.join(','),
-    '-c:v', 'libx264',
-    '-preset', 'medium',
-    '-crf', '23',
-    '-c:a', 'aac',
-    '-b:a', '128k',
-    '-movflags', '+faststart',
-    '-r', '30',
+  const args = buildRenderFromExtractedArgs({
+    inputPath,
     outputPath,
-  ];
+    aspectRatio,
+    crop,
+    subtitlePath,
+  });
 
   await execFileAsync('ffmpeg', args, { timeout: 600_000 });
 }
@@ -278,17 +153,8 @@ export async function extractAudio(
   outputPath: string,
   format: 'wav' | 'mp3' = 'wav',
 ): Promise<void> {
-  const codecArgs = format === 'wav'
-    ? ['-c:a', 'pcm_s16le', '-ar', '16000', '-ac', '1'] // 16kHz mono WAV for Whisper
-    : ['-c:a', 'libmp3lame', '-b:a', '128k'];
-
-  await execFileAsync('ffmpeg', [
-    '-y',
-    '-i', inputPath,
-    '-vn', // No video
-    ...codecArgs,
-    outputPath,
-  ]);
+  const args = buildExtractAudioArgs({ inputPath, outputPath, format });
+  await execFileAsync('ffmpeg', args);
 }
 
 // ============================================================
@@ -300,10 +166,11 @@ export async function extractAudio(
  */
 export async function validateOutput(
   outputPath: string,
-  expectedAspectRatio: AspectRatio,
+  expectedAspectRatio: RenderCommandOptions['aspectRatio'],
   expectedDurationSec: number,
   toleranceSec: number = 1.5,
 ): Promise<{ valid: boolean; errors: string[] }> {
+  const { getTargetDimensions } = await import('./ffmpeg-command');
   const probe = await probeVideo(outputPath);
   const target = getTargetDimensions(expectedAspectRatio);
   const errors: string[] = [];
@@ -317,19 +184,4 @@ export async function validateOutput(
   }
 
   return { valid: errors.length === 0, errors };
-}
-
-// ============================================================
-// UTILITIES
-// ============================================================
-
-/**
- * Escape file path for use inside FFmpeg filter strings.
- * FFmpeg filter syntax requires escaping colons, backslashes, and single quotes.
- */
-function escapeFfmpegPath(filePath: string): string {
-  return filePath
-    .replace(/\\/g, '/')
-    .replace(/:/g, '\\:')
-    .replace(/'/g, "'\\''");
 }

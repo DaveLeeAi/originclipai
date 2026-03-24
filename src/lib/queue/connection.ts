@@ -10,6 +10,9 @@ export function getRedisConnection(): IORedis {
     }
     connection = new IORedis(redisUrl, {
       maxRetriesPerRequest: null, // Required by BullMQ
+      tls: redisUrl.startsWith("rediss://") ? {} : undefined,
+      enableReadyCheck: false,
+      connectTimeout: 10000,
     });
   }
   return connection;

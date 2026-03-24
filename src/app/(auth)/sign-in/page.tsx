@@ -97,7 +97,7 @@ export default function SignInPage() {
                 placeholder="you@example.com"
               />
             </div>
-            <div className="mb-5">
+            <div className="mb-2">
               <label className="mb-1 block text-xs font-semibold text-[#6b6960]">Password</label>
               <input
                 type="password"
@@ -107,6 +107,14 @@ export default function SignInPage() {
                 className="w-full rounded-xl border border-[#e4e2dd] px-4 py-2.5 text-sm outline-none focus:border-[#5046e5]/40"
                 placeholder="••••••••"
               />
+            </div>
+            <div className="mb-5 text-right">
+              <Link
+                href="/forgot-password"
+                className="text-xs font-medium text-[#5046e5] hover:underline"
+              >
+                Forgot password?
+              </Link>
             </div>
 
             {error && (

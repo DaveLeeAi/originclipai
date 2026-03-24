@@ -57,6 +57,8 @@ enum TextOutputType {
   social_caption
   blog_draft
   show_notes
+  key_insight
+  notable_quote
   custom
 }
 
@@ -191,6 +193,7 @@ model Clip {
   renderStatus      String     @default("pending") @map("render_status")
   socialCaption     String?    @map("social_caption")
   hashtags          Json       @default("[]")
+  platforms         Json       @default("[]")
   sortOrder         Int        @default(0) @map("sort_order")
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @default(now()) @updatedAt @map("updated_at")

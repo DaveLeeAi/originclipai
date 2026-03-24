@@ -1,6 +1,6 @@
 // src/app/(dashboard)/jobs/[id]/page.tsx
 
-import { createClient } from '@/lib/auth/server';
+import { getUser } from '@/lib/auth/server';
 import { db } from '@/lib/db/client';
 import { notFound, redirect } from 'next/navigation';
 import { ProgressChecklist } from '@/components/processing/progress-checklist';
@@ -11,8 +11,7 @@ interface Props {
 
 export default async function JobPage({ params }: Props) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUser();
 
   const job = await db.job.findFirst({
     where: { id, userId: user!.id },
@@ -21,6 +20,7 @@ export default async function JobPage({ params }: Props) {
       status: true,
       sourceTitle: true,
       sourceType: true,
+      error: true,
     },
   });
 
@@ -38,6 +38,8 @@ export default async function JobPage({ params }: Props) {
       jobId={job.id}
       sourceTitle={job.sourceTitle ?? undefined}
       isTextOnly={isTextOnly}
+      initialStatus={job.status}
+      initialError={job.error ?? undefined}
     />
   );
 }

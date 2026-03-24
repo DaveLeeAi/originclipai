@@ -3,6 +3,34 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+/**
+ * Dev-mode auth bypass.
+ * When DEV_AUTH_BYPASS=true and Supabase isn't configured, returns a fake user
+ * so you can test the full pipeline locally without Supabase Auth.
+ *
+ * Set in .env.local:
+ *   DEV_AUTH_BYPASS=true
+ *   DEV_USER_ID=00000000-0000-0000-0000-000000000001
+ *   DEV_USER_EMAIL=dev@localhost
+ */
+const DEV_BYPASS_ENABLED =
+  process.env.DEV_AUTH_BYPASS === 'true' && process.env.NODE_ENV !== 'production';
+
+const DEV_USER = DEV_BYPASS_ENABLED
+  ? {
+      id: process.env.DEV_USER_ID ?? '00000000-0000-0000-0000-000000000001',
+      email: process.env.DEV_USER_EMAIL ?? 'dev@localhost',
+      user_metadata: {
+        full_name: 'Dev User',
+        avatar_url: null,
+      },
+      app_metadata: {},
+      aud: 'authenticated',
+      role: 'authenticated',
+      created_at: new Date().toISOString(),
+    }
+  : null;
+
 export async function createClient() {
   const cookieStore = await cookies();
 
@@ -32,8 +60,13 @@ export async function createClient() {
 /**
  * Get the current authenticated user or null.
  * Use in Server Components and API routes.
+ *
+ * In dev mode with DEV_AUTH_BYPASS=true, returns a fake user.
  */
 export async function getUser() {
+  if (DEV_USER) {
+    return DEV_USER as ReturnType<Awaited<ReturnType<typeof createClient>>['auth']['getUser']> extends { data: { user: infer U } } ? U : never;
+  }
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   return user;
