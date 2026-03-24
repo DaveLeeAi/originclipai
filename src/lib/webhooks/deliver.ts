@@ -46,13 +46,8 @@ export async function deliverWebhook(
   // the webhook configuration UI is built.
   // The function signature and retry logic are ready.
 
-  const payload: WebhookPayload = {
-    event,
-    timestamp: new Date().toISOString(),
-    data,
-  };
-
-  // When webhook URLs are configured, call deliverToEndpoint for each
+  // When webhook URLs are configured, build payload and call deliverToEndpoint:
+  // const payload: WebhookPayload = { event, timestamp: new Date().toISOString(), data };
   // await deliverToEndpoint(webhookUrl, webhookSecret, payload);
   console.log(`[webhook] ${event} for user ${userId}:`, JSON.stringify(data).slice(0, 200));
 }

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Job not found' }, { status: 404 });
   }
 
-  if (job.status !== 'COMPLETE') {
+  if (job.status !== 'complete') {
     return NextResponse.json({ error: 'Job must be complete before exporting' }, { status: 400 });
   }
 

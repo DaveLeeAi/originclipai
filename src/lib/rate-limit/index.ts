@@ -61,9 +61,7 @@ export async function checkRateLimit(
   const currentCount = (results?.[1]?.[1] as number) ?? 0;
 
   if (currentCount >= limit) {
-    // Over limit — remove the entry we just added
-    const lastEntry = results?.[2];
-    // Get the oldest entry to calculate reset time
+    // Over limit — get the oldest entry to calculate reset time
     const oldest = await redis.zrange(redisKey, 0, 0, 'WITHSCORES');
     const oldestTime = oldest.length >= 2 ? parseInt(oldest[1]) : now;
     const resetAt = new Date(oldestTime + windowMs);

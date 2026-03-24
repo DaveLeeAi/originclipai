@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/auth/server';
 import { AppShell } from '@/components/layout/app-shell';
+import { OnboardingWrapper } from '@/components/onboarding/onboarding-wrapper';
 import { db } from '@/lib/db/client';
 
 export default async function DashboardLayout({
@@ -17,11 +18,19 @@ export default async function DashboardLayout({
     redirect('/sign-in');
   }
 
-  // Fetch usage for the sidebar meter
+  // Fetch profile for sidebar meter and onboarding state
   const profile = await db.profile.findUnique({
     where: { id: user.id },
-    select: { plan: true, minutesUsedThisCycle: true, minutesLimit: true },
+    select: {
+      plan: true,
+      minutesUsedThisCycle: true,
+      minutesLimit: true,
+      onboardingComplete: true,
+      displayName: true,
+    },
   });
+
+  const showOnboarding = !profile?.onboardingComplete;
 
   return (
     <AppShell
@@ -29,6 +38,9 @@ export default async function DashboardLayout({
       minutesLimit={profile?.minutesLimit ?? 30}
       plan={profile?.plan ?? 'Free'}
     >
+      {showOnboarding && (
+        <OnboardingWrapper userName={profile?.displayName ?? undefined} />
+      )}
       {children}
     </AppShell>
   );

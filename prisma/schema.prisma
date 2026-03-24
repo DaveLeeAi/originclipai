@@ -104,6 +104,7 @@ model Profile {
   minutesUsedThisCycle  Int      @default(0) @map("minutes_used_this_cycle")
   minutesLimit          Int      @default(30) @map("minutes_limit")
   billingCycleStart     DateTime? @map("billing_cycle_start")
+  onboardingComplete    Boolean  @default(false) @map("onboarding_complete")
   defaultCaptionStyle   String   @default("karaoke") @map("default_caption_style")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")

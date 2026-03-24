@@ -38,9 +38,10 @@ export async function GET(
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Authorization failed';
     return NextResponse.redirect(
-      new URL(`/settings/connections?error=${encodeURIComponent(error.message)}`, request.url),
+      new URL(`/settings/connections?error=${encodeURIComponent(message)}`, request.url),
     );
   }
 }

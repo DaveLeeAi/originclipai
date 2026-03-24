@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getUser } from '@/lib/auth/server';
 import { getSocialAdapter } from '@/lib/social';
 import { db } from '@/lib/db/client';
+import { Platform } from '@prisma/client';
 import { cookies } from 'next/headers';
 
 /**
@@ -62,12 +63,12 @@ export async function GET(
       where: {
         userId_platform: {
           userId: user.id,
-          platform: platform.toUpperCase() as any,
+          platform: platform.toLowerCase() as Platform,
         },
       },
       create: {
         userId: user.id,
-        platform: platform.toUpperCase() as any,
+        platform: platform.toLowerCase() as Platform,
         platformUserId: userInfo.platformUserId,
         platformUsername: userInfo.platformUsername,
         platformAvatarUrl: userInfo.platformAvatarUrl,
@@ -97,9 +98,10 @@ export async function GET(
     settingsUrl.searchParams.set('connected', platform);
 
     return NextResponse.redirect(settingsUrl);
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[oauth] ${platform} callback error:`, error);
-    settingsUrl.searchParams.set('error', `Failed to connect ${platform}: ${error.message}`);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    settingsUrl.searchParams.set('error', `Failed to connect ${platform}: ${message}`);
     return NextResponse.redirect(settingsUrl);
   }
 }
