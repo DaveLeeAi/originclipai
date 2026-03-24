@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db/client";
 import { updateJobProgress, updateJobStatus } from "@/lib/db/job-progress";
 import { getLLMProvider } from "@/lib/providers/llm-anthropic";
 import { getStorageProvider } from "@/lib/providers/storage-supabase";
+import { fireJobCompletedWebhook } from "@/lib/webhooks/dispatcher";
 import {
   clipAnalysisPrompt,
   speakerRolesPrompt,
@@ -186,6 +187,19 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
     // For text-only sources: mark complete. For video/audio: would go to rendering (Phase 2).
     // In Phase 1 (no render worker), mark all jobs as complete after analyze.
     await updateJobStatus(jobId, "complete");
+
+    // Fire webhook
+    const clipCount = isTextOnly
+      ? 0
+      : await prisma.clip.count({ where: { jobId } });
+    await fireJobCompletedWebhook(jobId, {
+      status: "complete",
+      clipCount,
+      textOutputCount: textResults.length,
+      sourceTitle: job.sourceTitle,
+    }).catch((err) => {
+      console.warn(`[analyze] Webhook dispatch failed for job ${jobId}:`, err);
+    });
   } catch (error) {
     await updateJobProgress(jobId, "analyze", "error").catch(() => {});
     await updateJobStatus(
