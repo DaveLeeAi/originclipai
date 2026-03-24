@@ -5,6 +5,24 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
+const YOUTUBE_PATTERNS = [
+  /^https?:\/\/(www\.)?youtube\.com\/watch\?v=[\w-]+/,
+  /^https?:\/\/youtu\.be\/[\w-]+/,
+  /^https?:\/\/(www\.)?youtube\.com\/shorts\/[\w-]+/,
+];
+
+const VIDEO_EXTENSIONS = /\.(mp4|webm|mov)(\?|$)/i;
+
+function detectSourceType(url: string): { sourceType: string; sourceUrl: string } {
+  if (YOUTUBE_PATTERNS.some((p) => p.test(url))) {
+    return { sourceType: 'youtube_url', sourceUrl: url };
+  }
+  if (VIDEO_EXTENSIONS.test(url)) {
+    return { sourceType: 'video_url', sourceUrl: url };
+  }
+  return { sourceType: 'article_url', sourceUrl: url };
+}
+
 export function IngestForm() {
   const [url, setUrl] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -21,7 +39,7 @@ export function IngestForm() {
       const res = await fetch('/api/v1/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify(detectSourceType(url.trim())),
       });
 
       const data = await res.json();
@@ -57,10 +75,14 @@ export function IngestForm() {
       await fetch(uploadUrl, { method: 'PUT', body: file });
 
       // Step 3: Create job from uploaded file
+      const isAudio = /^audio\//.test(file.type);
       const jobRes = await fetch('/api/v1/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileKey }),
+        body: JSON.stringify({
+          sourceType: isAudio ? 'audio_upload' : file.type === 'application/pdf' ? 'pdf_upload' : 'video_upload',
+          sourceFileKey: fileKey,
+        }),
       });
 
       const jobData = await jobRes.json();

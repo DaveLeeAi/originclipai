@@ -4,7 +4,6 @@
 // Static page — Server Component. No client-side JS needed.
 
 import Link from 'next/link';
-import { MarketingNav } from '@/components/layout/marketing-nav';
 
 export const metadata = {
   title: 'OriginClipAI — Turn any content into clips, posts, and threads',
@@ -28,11 +27,7 @@ export const metadata = {
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-[#f6f5f2] text-[#1a1a1a]">
-      {/* NAV */}
-      {/* @ts-expect-error Async Server Component */}
-      <MarketingNav />
-
+    <div className="text-[#1a1a1a]">
       {/* HERO */}
       <section className="mx-auto max-w-4xl px-6 pb-20 pt-24 text-center">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#e4e2dd] bg-white px-4 py-1.5 text-xs font-semibold text-[#6b6960] shadow-sm">
@@ -303,24 +298,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-[#e4e2dd] bg-white py-12">
-        <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 px-6 text-center text-sm text-[#a09e96] md:flex-row md:justify-between md:text-left">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-[#5046e5] to-[#7c3aed]">
-              <span className="text-[10px] font-extrabold text-white">O</span>
-            </div>
-            <span className="font-semibold text-[#6b6960]">OriginClipAI</span>
-          </div>
-          <div className="flex gap-6">
-            <a href="#pricing" className="hover:text-[#6b6960]">Pricing</a>
-            <Link href="/blog" className="hover:text-[#6b6960]">Blog</Link>
-            <Link href="/docs/api" className="hover:text-[#6b6960]">API</Link>
-            <a href="mailto:support@originclipai.com" className="hover:text-[#6b6960]">Support</a>
-          </div>
-          <div>© {new Date().getFullYear()} OriginClipAI</div>
-        </div>
-      </footer>
-    </main>
+    </div>
   );
 }

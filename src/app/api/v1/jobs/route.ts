@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
 import { ingestQueue } from "@/lib/queue/queues";
 import { createJobSchema } from "@/lib/utils/validation";
+import { getUser } from "@/lib/auth/server";
 import type { JobProgress } from "@/types";
 
 /**
@@ -15,26 +16,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     const body: unknown = await request.json();
     const input = createJobSchema.parse(body);
 
-    // TODO: Phase 3 — authenticate request and check billing limits
-    // For Phase 1 headless testing, use a default user ID
-    const userId = request.headers.get("x-user-id") ?? process.env.DEFAULT_USER_ID;
-    if (!userId) {
+    const user = await getUser();
+    if (!user) {
       return NextResponse.json(
-        { error: "x-user-id header or DEFAULT_USER_ID env var required" },
+        { error: "Unauthorized" },
         { status: 401 },
       );
     }
-
-    // Ensure user profile exists
-    const profile = await prisma.profile.findUnique({
-      where: { id: userId },
-    });
-    if (!profile) {
-      return NextResponse.json(
-        { error: "User profile not found" },
-        { status: 404 },
-      );
-    }
+    const userId = user.id;
 
     // Create job record
     const initialProgress: JobProgress = {
@@ -98,13 +87,14 @@ export async function POST(request: Request): Promise<NextResponse> {
  */
 export async function GET(request: Request): Promise<NextResponse> {
   try {
-    const userId = request.headers.get("x-user-id") ?? process.env.DEFAULT_USER_ID;
-    if (!userId) {
+    const user = await getUser();
+    if (!user) {
       return NextResponse.json(
-        { error: "x-user-id header required" },
+        { error: "Unauthorized" },
         { status: 401 },
       );
     }
+    const userId = user.id;
 
     const url = new URL(request.url);
     const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "20"), 100);

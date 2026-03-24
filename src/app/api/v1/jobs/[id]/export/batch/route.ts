@@ -42,10 +42,10 @@ type RenderedFilesRecord = Record<string, RenderedFileInfo | CaptionFiles>;
  */
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
   try {
-    const jobId = params.id;
+    const { id: jobId } = await params;
 
     // Verify job exists
     const job = await prisma.job.findUnique({
@@ -134,7 +134,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error(`[api] GET /api/v1/jobs/${params.id}/export/batch error:`, error);
+    console.error("[api] GET /api/v1/jobs/[id]/export/batch error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

@@ -419,7 +419,7 @@ async function enqueueNextStep(
     await transcribeQueue().add("transcribe", {
       jobId,
       sourceFileKey,
-      engine: "whisper",
+      engine: (process.env.TRANSCRIPTION_ENGINE as 'whisper' | 'assemblyai') ?? 'assemblyai',
     });
   }
 }

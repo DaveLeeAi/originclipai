@@ -6,11 +6,12 @@ import { prisma } from "@/lib/db/client";
  */
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const { id: jobId } = await params;
     const job = await prisma.job.findUnique({
-      where: { id: params.id },
+      where: { id: jobId },
       select: { id: true },
     });
 
@@ -19,7 +20,7 @@ export async function GET(
     }
 
     const clips = await prisma.clip.findMany({
-      where: { jobId: params.id },
+      where: { jobId },
       orderBy: [{ score: "desc" }, { sortOrder: "asc" }],
       select: {
         id: true,
@@ -47,7 +48,7 @@ export async function GET(
       total: clips.length,
     });
   } catch (error) {
-    console.error(`[api] GET /api/v1/jobs/${params.id}/clips error:`, error);
+    console.error("[api] GET /api/v1/jobs/[id]/clips error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

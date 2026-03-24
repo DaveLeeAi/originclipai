@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
   const { plan } = await req.json();
 
-  if (!['CREATOR', 'PRO', 'BUSINESS'].includes(plan)) {
+  if (!['creator', 'pro', 'business'].includes(plan)) {
     return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
   }
 

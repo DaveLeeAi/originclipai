@@ -54,8 +54,17 @@ export function ProgressChecklist({ jobId, sourceTitle, isTextOnly }: ProgressCh
     const handleProgressEvent = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.progress) setProgress(data.progress);
+        if (data.progress) {
+          setProgress({
+            ingest: data.progress.ingest ?? 'pending',
+            transcribe: data.progress.transcribe ?? 'pending',
+            analyze: data.progress.analyze ?? 'pending',
+            render: data.progress.render ?? 'pending',
+            details: data.progress.details ?? {},
+          });
+        }
         if (data.status) setJobStatus(data.status);
+        if (data.error) setError(data.error);
       } catch {
         // Ignore parse errors
       }

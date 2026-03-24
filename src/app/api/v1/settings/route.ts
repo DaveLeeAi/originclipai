@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 const updateSettingsSchema = z.object({
   defaultCaptionStyle: z.enum(['karaoke', 'subtitle', 'minimal']).optional(),
+  onboardingComplete: z.literal(true).optional(),
 });
 
 export async function PATCH(request: Request): Promise<NextResponse> {
@@ -22,6 +23,9 @@ export async function PATCH(request: Request): Promise<NextResponse> {
       data: {
         ...(input.defaultCaptionStyle !== undefined
           ? { defaultCaptionStyle: input.defaultCaptionStyle }
+          : {}),
+        ...(input.onboardingComplete === true
+          ? { onboardingComplete: true }
           : {}),
       },
     });

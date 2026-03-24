@@ -71,6 +71,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Redirect authenticated users from root to dashboard
+  if (user && request.nextUrl.pathname === '/') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/jobs';
+    return NextResponse.redirect(url);
+  }
+
   // Redirect authenticated users away from auth pages
   if (user && (request.nextUrl.pathname === '/sign-in' || request.nextUrl.pathname === '/sign-up')) {
     const redirect = request.nextUrl.searchParams.get('redirect') ?? '/';

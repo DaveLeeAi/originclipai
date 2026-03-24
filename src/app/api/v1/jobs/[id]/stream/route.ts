@@ -8,9 +8,9 @@ import { prisma } from "@/lib/db/client";
  */
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  const jobId = params.id;
+  const { id: jobId } = await params;
 
   // Verify job exists
   const job = await prisma.job.findUnique({

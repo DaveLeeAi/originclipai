@@ -31,7 +31,7 @@ export interface PlanDefinition {
 }
 
 export const PLANS: Record<string, PlanDefinition> = {
-  FREE: {
+  free: {
     name: 'Free',
     minutesLimit: 30,
     maxConcurrentJobs: 2,
@@ -42,7 +42,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     maxResolution: '720p',
     stripePriceId: null,
   },
-  CREATOR: {
+  creator: {
     name: 'Creator',
     minutesLimit: 300,
     maxConcurrentJobs: 5,
@@ -53,7 +53,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     maxResolution: '1080p',
     stripePriceId: process.env.STRIPE_PRICE_CREATOR ?? null,
   },
-  PRO: {
+  pro: {
     name: 'Pro',
     minutesLimit: 900,
     maxConcurrentJobs: 5,
@@ -64,7 +64,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     maxResolution: '1080p',
     stripePriceId: process.env.STRIPE_PRICE_PRO ?? null,
   },
-  BUSINESS: {
+  business: {
     name: 'Business',
     minutesLimit: 2400,
     maxConcurrentJobs: 10,
@@ -124,7 +124,7 @@ export async function canStartJob(
     select: { plan: true, minutesUsedThisCycle: true, minutesLimit: true },
   });
 
-  const plan = PLANS[profile.plan] ?? PLANS.FREE;
+  const plan = PLANS[profile.plan] ?? PLANS.free;
 
   // Check minute limit
   if (profile.minutesUsedThisCycle + estimatedMinutes > profile.minutesLimit) {
@@ -177,7 +177,7 @@ export async function checkFeatureAccess(
     select: { plan: true },
   });
 
-  const plan = PLANS[profile.plan] ?? PLANS.FREE;
+  const plan = PLANS[profile.plan] ?? PLANS.free;
   return !!plan[feature];
 }
 
