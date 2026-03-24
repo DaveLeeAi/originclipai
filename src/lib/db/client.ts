@@ -16,3 +16,6 @@ export const prisma =
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
+
+/** Alias used by billing and other modules */
+export const db = prisma;

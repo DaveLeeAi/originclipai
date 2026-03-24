@@ -1,7 +1,7 @@
 // src/lib/billing/index.ts
 
 import Stripe from 'stripe';
-import { db } from '@/lib/db/client';
+import { prisma as db } from '@/lib/db/client';
 
 // --- STRIPE CLIENT ---
 

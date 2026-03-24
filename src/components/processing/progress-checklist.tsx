@@ -50,36 +50,64 @@ export function ProgressChecklist({ jobId, sourceTitle, isTextOnly }: ProgressCh
     const es = new EventSource(`/api/v1/jobs/${jobId}/stream`);
     eventSourceRef.current = es;
 
+    // Handle named SSE events from the stream endpoint
+    const handleProgressEvent = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.progress) setProgress(data.progress);
+        if (data.status) setJobStatus(data.status);
+      } catch {
+        // Ignore parse errors
+      }
+    };
+
+    const handleDoneEvent = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        setJobStatus(data.status ?? 'complete');
+        es.close();
+        setTimeout(() => {
+          router.push(`/jobs/${jobId}/review`);
+        }, 1500);
+      } catch {
+        // Ignore parse errors
+      }
+    };
+
+    const handleErrorEvent = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        setError(data.message ?? 'Processing failed');
+        setJobStatus('failed');
+        es.close();
+      } catch {
+        // Ignore parse errors
+      }
+    };
+
+    es.addEventListener('progress', handleProgressEvent);
+    es.addEventListener('done', handleDoneEvent);
+    es.addEventListener('error', handleErrorEvent);
+
+    // Fallback: also handle unnamed messages (generic onmessage)
     es.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-
-        if (data.progress) {
-          setProgress(data.progress);
-        }
+        if (data.progress) setProgress(data.progress);
         if (data.status) {
           setJobStatus(data.status);
-
           if (data.status === 'complete') {
             es.close();
-            // Short delay before redirect so user sees "complete" state
-            setTimeout(() => {
-              router.push(`/jobs/${jobId}/review`);
-            }, 1500);
+            setTimeout(() => router.push(`/jobs/${jobId}/review`), 1500);
           }
-
           if (data.status === 'failed') {
             es.close();
             setError(data.error ?? 'Processing failed');
           }
         }
       } catch {
-        // Ignore parse errors from SSE
+        // Ignore parse errors
       }
-    };
-
-    es.onerror = () => {
-      // SSE reconnects automatically. If job is done, we've already closed.
     };
 
     return () => {
