@@ -322,14 +322,27 @@ async function extractPdf(
   const storage = getStorageProvider();
   const buffer = await storage.download(fileKey);
 
-  // Basic PDF text extraction
-  // In production, use pdf-parse. For now, store raw and let analyze worker handle text.
-  const textContent = buffer.toString("utf-8").replace(/[^\x20-\x7E\n\r\t]/g, " ");
+  // Extract text using pdf-parse
+  let textContent: string;
+  let pageCount: number | undefined;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
+    const parsed = await pdfParse(buffer);
+    textContent = parsed.text;
+    pageCount = parsed.numpages;
+  } catch {
+    // Fallback: basic UTF-8 extraction if pdf-parse fails (e.g. scanned PDFs)
+    textContent = buffer.toString("utf-8").replace(/[^\x20-\x7E\n\r\t]/g, " ");
+  }
+
+  const title = fileKey.split("/").pop()?.replace(".pdf", "") ?? "document";
 
   const contentJson = JSON.stringify({
-    title: fileKey.split("/").pop()?.replace(".pdf", "") ?? "document",
+    title,
     content: textContent.slice(0, 500_000), // Cap at 500K chars
     fileKey,
+    pageCount,
     fetchedAt: new Date().toISOString(),
   });
 
@@ -341,8 +354,9 @@ async function extractPdf(
   return {
     storageKey: outputKey,
     metadata: {
-      title: fileKey.split("/").pop()?.replace(".pdf", "") ?? "document",
+      title,
       sourceFormat: "pdf",
+      pageCount,
     },
   };
 }
@@ -350,9 +364,18 @@ async function extractPdf(
 // ─── HTML helpers ───────────────────────────────────────────────────
 
 function extractTextFromHtml(html: string): string {
+  // Try to extract from <article> or <main> for cleaner content
+  const articleMatch = html.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
+  const mainMatch = html.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
+  const contentHtml = articleMatch?.[1] ?? mainMatch?.[1] ?? html;
+
   // Remove script and style blocks
-  let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+  let text = contentHtml.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
   text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+  // Remove navigation, header, footer blocks
+  text = text.replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "");
+  text = text.replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "");
+  text = text.replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "");
   // Remove all tags
   text = text.replace(/<[^>]+>/g, " ");
   // Decode common HTML entities
