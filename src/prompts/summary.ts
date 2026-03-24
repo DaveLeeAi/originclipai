@@ -1,45 +1,48 @@
-import { z } from "zod";
-import { cleanLLMResponse } from "@/lib/llm/response-cleaner";
+// src/prompts/summary.ts
 
-export const summarySchema = z.object({
-  summary: z.string().min(50).max(2000),
-  keyInsights: z.array(z.string()).min(2).max(10),
-  wordCount: z.number().int(),
-});
+import { summarySchema, type Summary } from './schemas';
+import { cleanLLMResponse } from '@/lib/llm/response-cleaner';
+import type { PromptTemplate, BaseContentParams } from './types';
 
-export type SummaryOutput = z.infer<typeof summarySchema>;
-
-export interface SummaryParams {
-  sourceTitle: string;
-  content: string;
-}
-
-export const summaryPrompt = {
-  version: "1.0",
-  model: "claude-sonnet-4-20250514",
+export const summaryPrompt: PromptTemplate<BaseContentParams, Summary> = {
+  version: '1.0',
+  model: 'claude-sonnet-4-20250514',
   temperature: 0.3,
   maxTokens: 2000,
 
-  system: `You generate concise, insightful summaries of content. Return ONLY JSON, no other text.`,
+  system: `You are generating a concise summary of content for a creator's reference. This summary will be used for show notes, YouTube descriptions, and internal reference.
 
-  buildUserMessage: (params: SummaryParams): string => {
-    return `Generate a 2-3 paragraph summary of this content.
+Rules:
+- 2-3 paragraphs. 100-250 words total.
+- Lead with the main topic/thesis, not "In this episode..."
+- Extract 3-7 key insights as standalone bullet-point takeaways.
+- Be specific — include names, numbers, frameworks, and concrete examples from the content.
+- Neutral, informative tone. Not promotional.
+
+Return ONLY a JSON object. No markdown fences. No explanation.`,
+
+  buildUserMessage: (params) => {
+    const speakerBlock = params.speakers?.length
+      ? `\nSPEAKERS:\n${JSON.stringify(params.speakers, null, 2)}\n`
+      : '';
+
+    return `Generate a summary and key insights from this content.
 
 SOURCE: ${params.sourceTitle}
+TYPE: ${params.sourceType}
+${speakerBlock}
 CONTENT:
 ${params.content}
 
-Return JSON:
-{
-  "summary": "In this episode, ...",
-  "keyInsights": ["Insight 1", "Insight 2", "Insight 3"],
-  "wordCount": 150
-}`;
+Return a JSON object with:
+summary (string — 2-3 paragraph summary),
+keyInsights (array of strings — 3-7 specific takeaways),
+wordCount (integer — word count of summary only)`;
   },
 
-  parseResponse: (raw: string): SummaryOutput => {
+  parseResponse: (raw) => {
     const cleaned = cleanLLMResponse(raw);
-    const parsed: unknown = JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
     return summarySchema.parse(parsed);
   },
 };

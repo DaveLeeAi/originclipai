@@ -1,48 +1,80 @@
-import type { z } from "zod";
+// src/lib/providers/llm.ts
 
-// ─── LLM Provider Interface ────────────────────────────────────────
+export interface LLMCompletionParams {
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  system: string;
+  messages: LLMMessage[];
+}
 
 export interface LLMMessage {
-  role: "system" | "user" | "assistant";
+  role: 'user' | 'assistant';
   content: string;
 }
 
-export interface LLMOptions {
-  model?: string;
-  temperature?: number;
-  maxTokens?: number;
-}
-
-export interface LLMResponse {
-  content: string;
-  usage: {
-    inputTokens: number;
-    outputTokens: number;
-  };
+export interface LLMCompletionResult {
+  text: string;
+  inputTokens: number;
+  outputTokens: number;
+  model: string;
 }
 
 export interface LLMProvider {
-  readonly name: string;
+  complete(params: LLMCompletionParams): Promise<LLMCompletionResult>;
+}
 
-  /**
-   * Send a chat completion request and return raw text response.
-   */
-  chat(messages: LLMMessage[], options?: LLMOptions): Promise<LLMResponse>;
+// --- Claude Implementation ---
 
-  /**
-   * Send a chat completion request and parse the response as structured JSON.
-   * @param messages - Chat messages
-   * @param schema - Zod schema for response validation
-   * @param options - LLM configuration options
-   */
-  chatStructured<T>(
-    messages: LLMMessage[],
-    schema: z.ZodSchema<T>,
-    options?: LLMOptions,
-  ): Promise<T>;
+import Anthropic from '@anthropic-ai/sdk';
 
-  /**
-   * Check if the provider is available and properly configured.
-   */
-  isAvailable(): Promise<boolean>;
+export class ClaudeLLMProvider implements LLMProvider {
+  private client: Anthropic;
+
+  constructor(apiKey?: string) {
+    this.client = new Anthropic({
+      apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY,
+    });
+  }
+
+  async complete(params: LLMCompletionParams): Promise<LLMCompletionResult> {
+    const response = await this.client.messages.create({
+      model: params.model,
+      max_tokens: params.maxTokens,
+      temperature: params.temperature,
+      system: params.system,
+      messages: params.messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+    });
+
+    const text = response.content
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .map((block) => block.text)
+      .join('\n');
+
+    return {
+      text,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      model: response.model,
+    };
+  }
+}
+
+// --- Factory ---
+
+let _provider: LLMProvider | null = null;
+
+export function getLLMProvider(): LLMProvider {
+  if (!_provider) {
+    _provider = new ClaudeLLMProvider();
+  }
+  return _provider;
+}
+
+/** For testing — inject a mock provider */
+export function setLLMProvider(provider: LLMProvider): void {
+  _provider = provider;
 }

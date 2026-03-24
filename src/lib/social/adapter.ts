@@ -1,58 +1,111 @@
-import type { Platform } from "@/types";
+// src/lib/social/adapter.ts
 
-// ─── Social Adapter Interface ───────────────────────────────────────
+/**
+ * SocialAdapter — the contract every platform integration must implement.
+ * Workers call adapters through this interface, never directly.
+ */
+
+export interface SocialPostContent {
+  /** Post type: video upload or text-only */
+  type: 'video' | 'text' | 'thread';
+
+  /** Text content (caption for video, full post for text, first post for thread) */
+  text: string;
+
+  /** Video file path (local temp file for upload) */
+  videoPath?: string;
+
+  /** Video title (YouTube, TikTok) */
+  title?: string;
+
+  /** Hashtags (without # prefix) */
+  hashtags?: string[];
+
+  /** Thread posts (for X threads) */
+  threadPosts?: string[];
+
+  /** Thumbnail image path (optional) */
+  thumbnailPath?: string;
+}
 
 export interface SocialPostResult {
-  platformPostId: string;
-  platformPostUrl: string;
+  /** Whether the post was published successfully */
+  success: boolean;
+
+  /** Platform-assigned post ID */
+  platformPostId?: string;
+
+  /** Public URL of the published post */
+  platformPostUrl?: string;
+
+  /** Error message if failed */
+  error?: string;
+
+  /** Error code for categorization (rate_limit, auth_expired, content_rejected, unknown) */
+  errorCode?: 'rate_limit' | 'auth_expired' | 'content_rejected' | 'upload_failed' | 'unknown';
 }
 
 export interface SocialTokens {
   accessToken: string;
   refreshToken?: string;
-  expiresAt?: Date;
+  tokenExpiresAt?: Date;
+  scopes?: string[];
 }
 
-export interface VideoPostOptions {
-  title: string;
-  description?: string;
-  filePath: string;
-  hashtags?: string[];
-}
-
-export interface TextPostOptions {
-  content: string;
-  /** For X threads: array of individual post texts */
-  threadPosts?: string[];
+export interface SocialUserInfo {
+  platformUserId: string;
+  platformUsername: string;
+  platformAvatarUrl?: string;
 }
 
 export interface SocialAdapter {
-  readonly platform: Platform;
+  /** Platform identifier */
+  readonly platform: string;
 
   /**
-   * Post a video to the platform.
+   * Exchange OAuth authorization code for tokens.
+   * Called during initial account connection.
    */
-  postVideo(
-    tokens: SocialTokens,
-    options: VideoPostOptions,
-  ): Promise<SocialPostResult>;
+  exchangeCode(code: string, redirectUri: string): Promise<SocialTokens>;
 
   /**
-   * Post text content to the platform.
+   * Refresh an expired access token.
+   * Returns new tokens or throws if refresh token is also expired.
    */
-  postText(
-    tokens: SocialTokens,
-    options: TextPostOptions,
-  ): Promise<SocialPostResult>;
+  refreshTokens(refreshToken: string): Promise<SocialTokens>;
 
   /**
-   * Refresh an expired OAuth token.
-   * @returns Updated tokens
+   * Get the authenticated user's profile info.
+   * Used to display connected account in settings.
    */
-  refreshTokens(tokens: SocialTokens): Promise<SocialTokens>;
+  getUserInfo(accessToken: string): Promise<SocialUserInfo>;
 
   /**
-   * Validate that tokens are still active.
+   * Publish content to the platform.
+   * Handles both video uploads and text posts.
+   */
+  publish(content: SocialPostContent, tokens: SocialTokens): Promise<SocialPostResult>;
+
+  /**
+   * Check if the current tokens are still valid.
+   * Returns false if tokens need refreshing.
    */
   validateTokens(tokens: SocialTokens): Promise<boolean>;
+
+  /**
+   * Get the OAuth authorization URL for initial connection.
+   * User is redirected here to grant access.
+   */
+  getAuthUrl(redirectUri: string, state: string): string;
+
+  /**
+   * Platform-specific rate limit info.
+   */
+  getRateLimits(): {
+    postsPerDay: number;
+    postsPerMinute: number;
+    maxVideoSizeMb: number;
+    maxVideoDurationSec: number;
+    maxCaptionLength: number;
+  };
 }

@@ -1,9 +1,26 @@
-export { clipAnalysisPrompt, clipAnalysisResponseSchema, type ClipCandidateOutput, type ClipAnalysisParams } from "./clip-analysis";
-export { speakerRolesPrompt, speakerRolesResponseSchema, type SpeakerRoleOutput, type SpeakerRolesParams } from "./speaker-roles";
-export { linkedinPostPrompt, linkedinPostsResponseSchema, type LinkedinPostOutput, type LinkedinPostParams } from "./linkedin-post";
-export { xThreadPrompt, xThreadsResponseSchema, type XThreadOutput, type XThreadParams } from "./x-thread";
-export { newsletterSectionPrompt, newsletterSectionsResponseSchema, type NewsletterSectionOutput, type NewsletterSectionParams } from "./newsletter-section";
-export { summaryPrompt, summarySchema, type SummaryOutput, type SummaryParams } from "./summary";
-export { chapterMarkersPrompt, chapterMarkersSchema, type ChapterMarkersOutput, type ChapterMarkersParams } from "./chapter-markers";
-export { textRefinementPrompt, textRefinementSchema, type TextRefinementOutput, type TextRefinementParams } from "./text-refinement";
-export { customTemplatePrompt, customTemplateSchema, type CustomTemplateOutput, type CustomTemplateParams } from "./custom-template";
+// src/prompts/index.ts
+
+/**
+ * All prompt templates for OriginClipAI.
+ *
+ * Usage:
+ *   import { clipAnalysisPrompt } from '@/prompts';
+ *   const clips = clipAnalysisPrompt.parseResponse(rawLLMOutput);
+ *
+ * Every prompt template conforms to PromptTemplate<TParams, TOutput>.
+ * Every response is validated through Zod before use.
+ */
+
+export { clipAnalysisPrompt } from './clip-analysis';
+export { speakerRolesPrompt } from './speaker-roles';
+export { linkedinPostPrompt } from './linkedin-post';
+export { xThreadPrompt } from './x-thread';
+export { newsletterSectionPrompt } from './newsletter-section';
+export { summaryPrompt } from './summary';
+export { chapterMarkersPrompt } from './chapter-markers';
+export { textRefinementPrompt } from './text-refinement';
+export { customTemplatePrompt } from './custom-template';
+
+// Re-export types and schemas for convenience
+export type { PromptTemplate, SpeakerInfo, BaseContentParams } from './types';
+export * from './schemas';

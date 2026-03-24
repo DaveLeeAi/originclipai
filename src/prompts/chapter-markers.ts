@@ -1,61 +1,54 @@
-import { z } from "zod";
-import { cleanLLMResponse } from "@/lib/llm/response-cleaner";
+// src/prompts/chapter-markers.ts
 
-export const chapterMarkersSchema = z.object({
-  chapters: z
-    .array(
-      z.object({
-        timestamp: z.string().regex(/^\d+:\d{2}$/),
-        title: z.string().min(3).max(100),
-      }),
-    )
-    .min(3)
-    .max(20),
-});
+import { chapterMarkersSchema, type ChapterMarkers } from './schemas';
+import { cleanLLMResponse } from '@/lib/llm/response-cleaner';
+import type { PromptTemplate, SpeakerInfo } from './types';
 
-export type ChapterMarkersOutput = z.infer<typeof chapterMarkersSchema>;
-
-export interface ChapterMarkersParams {
+interface ChapterMarkersParams {
   sourceTitle: string;
-  duration: string;
+  durationSeconds: number;
+  durationFormatted: string;
   transcript: string;
+  speakers?: SpeakerInfo[];
 }
 
-export const chapterMarkersPrompt = {
-  version: "1.0",
-  model: "claude-sonnet-4-20250514",
-  temperature: 0.3,
+export const chapterMarkersPrompt: PromptTemplate<ChapterMarkersParams, ChapterMarkers> = {
+  version: '1.0',
+  model: 'claude-sonnet-4-20250514',
+  temperature: 0.2,
   maxTokens: 2000,
 
-  system: `You generate YouTube-formatted chapter markers from transcripts. Return ONLY JSON, no other text.`,
-
-  buildUserMessage: (params: ChapterMarkersParams): string => {
-    return `Generate YouTube-formatted chapter markers for this content.
-
-SOURCE: ${params.sourceTitle}
-DURATION: ${params.duration}
-CONTENT:
-${params.transcript}
-
-Return JSON:
-{
-  "chapters": [
-    {"timestamp": "0:00", "title": "Introduction"},
-    {"timestamp": "2:15", "title": "Why content systems matter"},
-    {"timestamp": "8:42", "title": "The 3-part framework"}
-  ]
-}
+  system: `You are generating YouTube-formatted chapter markers for a video.
 
 Rules:
-- First chapter must be at 0:00
-- Minimum 3 chapters, maximum 15
-- Each title is 3-8 words
-- Chapters should be at least 2 minutes apart`;
+- First chapter MUST be at 0:00.
+- Minimum 3 chapters, maximum 15.
+- Each title is 3-8 words. Descriptive, not clickbait.
+- Chapters should be at least 2 minutes apart.
+- Identify genuine topic transitions, not arbitrary time splits.
+- Use the transcript timestamps to place chapters accurately.
+- Format: "M:SS" for under 1 hour, "H:MM:SS" for over 1 hour.
+
+Return ONLY a JSON object. No markdown fences. No explanation.`,
+
+  buildUserMessage: (params) => {
+    return `Generate chapter markers for this video.
+
+SOURCE: ${params.sourceTitle}
+DURATION: ${params.durationFormatted} (${Math.round(params.durationSeconds)} seconds)
+
+TRANSCRIPT (with timestamps):
+${params.transcript}
+
+Return a JSON object with:
+chapters (array of {timestamp: string in "M:SS" or "H:MM:SS" format, title: string 3-8 words})
+
+First chapter must be at "0:00".`;
   },
 
-  parseResponse: (raw: string): ChapterMarkersOutput => {
+  parseResponse: (raw) => {
     const cleaned = cleanLLMResponse(raw);
-    const parsed: unknown = JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
     return chapterMarkersSchema.parse(parsed);
   },
 };

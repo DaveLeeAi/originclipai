@@ -1,71 +1,58 @@
-import { z } from "zod";
-import { cleanLLMResponse } from "@/lib/llm/response-cleaner";
+// src/prompts/x-thread.ts
 
-const threadPostSchema = z.object({
-  postNumber: z.number().int().min(1),
-  text: z.string().min(10).max(280),
-});
+import { xThreadsResponseSchema, type XThread } from './schemas';
+import { cleanLLMResponse } from '@/lib/llm/response-cleaner';
+import type { PromptTemplate, BaseContentParams } from './types';
 
-export const xThreadSchema = z.object({
-  threadPosts: z.array(threadPostSchema).min(3).max(15),
-  postCount: z.number().int().min(3).max(15),
-  wordCount: z.number().int(),
-  focusTopic: z.string().min(3),
-});
-
-export const xThreadsResponseSchema = z.array(xThreadSchema).min(1).max(3);
-
-export type XThreadOutput = z.infer<typeof xThreadSchema>;
-
-export interface XThreadParams {
-  sourceTitle: string;
-  content: string;
+interface XThreadParams extends BaseContentParams {
   count: number;
 }
 
-export const xThreadPrompt = {
-  version: "1.0",
-  model: "claude-sonnet-4-20250514",
+export const xThreadPrompt: PromptTemplate<XThreadParams, XThread[]> = {
+  version: '1.0',
+  model: 'claude-sonnet-4-20250514',
   temperature: 0.7,
-  maxTokens: 4000,
+  maxTokens: 5000,
 
-  system: `You are an expert X (Twitter) thread writer. You create threads that are engaging, well-structured, and optimized for the X algorithm.
+  system: `You are an expert X (Twitter) thread writer creating threads for a solo creator.
 
-X thread rules:
-- First post is the hook — it must make someone stop scrolling
-- Number each post (1/, 2/, etc.)
-- Each post is self-contained but builds on the previous
-- 5-10 posts per thread ideal
-- Last post is a summary + CTA (follow, bookmark, repost)
-- Each post under 280 characters
-- No hashtags mid-thread (optional 1-2 in last post)
+Rules:
+- First post is the hook. It must stop the scroll. Use: bold claim, counterintuitive take, "Here's what I learned," or a teaser for the payoff.
+- Start the first post with 🧵 emoji.
+- Number each post: 1/, 2/, etc.
+- Each post MUST be under 280 characters. This is a hard limit — X will reject longer posts.
+- Each post should be readable alone but build on the previous.
+- 5-10 posts per thread is the sweet spot. Under 5 feels shallow. Over 10 loses readers.
+- Last post is a summary + CTA: "Follow for more [topic]" or "Bookmark this thread."
+- No hashtags mid-thread. Optional 1-2 hashtags in the final post only.
+- Use short sentences. Punchy rhythm. White space between ideas.
+- No thread should overlap in topic with another thread from the same source.
 
-Return ONLY a JSON array. No other text.`,
+Return ONLY a JSON array. No markdown fences. No explanation.`,
 
-  buildUserMessage: (params: XThreadParams): string => {
-    return `Generate ${params.count} X thread(s) from this content.
+  buildUserMessage: (params) => {
+    const speakerBlock = params.speakers?.length
+      ? `\nSPEAKERS:\n${JSON.stringify(params.speakers, null, 2)}\n`
+      : '';
+
+    return `Generate ${params.count} X thread(s) from this content. Each thread covers a different angle.
 
 SOURCE: ${params.sourceTitle}
+TYPE: ${params.sourceType}
+${speakerBlock}
 CONTENT:
 ${params.content}
 
-Return JSON array:
-[
-  {
-    "threadPosts": [
-      {"postNumber": 1, "text": "Why I stopped posting daily content (and grew faster)\\n\\n1/"},
-      {"postNumber": 2, "text": "For 3 years I was on the content hamster wheel. Every day: write, record, edit, post.\\n\\n2/"}
-    ],
-    "postCount": 7,
-    "wordCount": 420,
-    "focusTopic": "content quality vs. quantity"
-  }
-]`;
+Return a JSON array. Each element must have:
+threadPosts (array of {postNumber: integer, text: string under 280 chars}),
+postCount (integer),
+wordCount (integer — total across all posts),
+focusTopic (string)`;
   },
 
-  parseResponse: (raw: string): XThreadOutput[] => {
+  parseResponse: (raw) => {
     const cleaned = cleanLLMResponse(raw);
-    const parsed: unknown = JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
     return xThreadsResponseSchema.parse(parsed);
   },
 };
