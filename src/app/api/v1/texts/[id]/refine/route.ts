@@ -14,11 +14,12 @@ const refineSchema = z.object({
  */
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const { id } = await params;
     const text = await prisma.textOutput.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true, content: true },
     });
 
@@ -41,7 +42,7 @@ export async function POST(
     const wordCount = refined.split(/\s+/).filter(Boolean).length;
 
     await prisma.textOutput.update({
-      where: { id: params.id },
+      where: { id },
       data: { content: refined, wordCount },
     });
 
@@ -53,7 +54,7 @@ export async function POST(
         { status: 400 },
       );
     }
-    console.error(`[api] POST /api/v1/texts/${params.id}/refine error:`, error);
+    console.error(`[api] POST /api/v1/texts/refine error:`, error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

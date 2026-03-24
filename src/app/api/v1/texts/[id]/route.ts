@@ -13,11 +13,12 @@ const updateTextSchema = z.object({
  */
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const { id } = await params;
     const text = await prisma.textOutput.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true },
     });
 
@@ -36,7 +37,7 @@ export async function PATCH(
       : undefined;
 
     const updated = await prisma.textOutput.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(input.status !== undefined ? { status: input.status } : {}),
         ...(input.content !== undefined ? { content: input.content } : {}),
@@ -63,7 +64,7 @@ export async function PATCH(
       );
     }
 
-    console.error(`[api] PATCH /api/v1/texts/${params.id} error:`, error);
+    console.error(`[api] PATCH /api/v1/texts error:`, error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -76,11 +77,12 @@ export async function PATCH(
  */
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const { id } = await params;
     const text = await prisma.textOutput.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!text) {
@@ -92,7 +94,7 @@ export async function GET(
 
     return NextResponse.json(text);
   } catch (error) {
-    console.error(`[api] GET /api/v1/texts/${params.id} error:`, error);
+    console.error(`[api] GET /api/v1/texts error:`, error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

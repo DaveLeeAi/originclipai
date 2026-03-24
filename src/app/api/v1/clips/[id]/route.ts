@@ -13,11 +13,12 @@ const updateClipSchema = z.object({
  */
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const { id } = await params;
     const clip = await prisma.clip.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true },
     });
 
@@ -29,7 +30,7 @@ export async function PATCH(
     const input = updateClipSchema.parse(body);
 
     const updated = await prisma.clip.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(input.status !== undefined ? { status: input.status } : {}),
         ...(input.title !== undefined ? { title: input.title } : {}),
@@ -58,7 +59,7 @@ export async function PATCH(
       );
     }
 
-    console.error(`[api] PATCH /api/v1/clips/${params.id} error:`, error);
+    console.error(`[api] PATCH /api/v1/clips error:`, error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -71,11 +72,12 @@ export async function PATCH(
  */
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const { id } = await params;
     const clip = await prisma.clip.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!clip) {
@@ -84,7 +86,7 @@ export async function GET(
 
     return NextResponse.json(clip);
   } catch (error) {
-    console.error(`[api] GET /api/v1/clips/${params.id} error:`, error);
+    console.error(`[api] GET /api/v1/clips error:`, error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

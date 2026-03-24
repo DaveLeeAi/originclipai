@@ -15,11 +15,12 @@ const querySchema = z.object({
  */
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const { id } = await params;
     const clip = await prisma.clip.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         renderStatus: true,
@@ -86,7 +87,7 @@ export async function GET(
       expiresIn: 3600,
     });
   } catch (error) {
-    console.error(`[api] GET /api/v1/clips/${params.id}/download error:`, error);
+    console.error(`[api] GET /api/v1/clips/download error:`, error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

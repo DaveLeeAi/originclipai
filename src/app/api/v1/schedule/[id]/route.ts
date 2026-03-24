@@ -11,16 +11,17 @@ const updateScheduleSchema = z.object({
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const { id } = await params;
     const userId = await getSessionUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const post = await prisma.scheduledPost.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { userId: true, status: true },
     });
 
@@ -35,13 +36,13 @@ export async function PATCH(
     if (input.status === "cancelled" && post.status === "queued") {
       try {
         const queue = scheduleQueue();
-        const job = await queue.getJob(`schedule-${params.id}`);
+        const job = await queue.getJob(`schedule-${id}`);
         if (job) {
           await job.remove();
         }
       } catch (removeError) {
         console.warn(
-          `[api] Failed to remove BullMQ job for post ${params.id}:`,
+          `[api] Failed to remove BullMQ job for post ${id}:`,
           removeError,
         );
         // Continue with DB update even if queue removal fails
@@ -53,7 +54,7 @@ export async function PATCH(
       try {
         const queue = scheduleQueue();
         // Remove old job
-        const oldJob = await queue.getJob(`schedule-${params.id}`);
+        const oldJob = await queue.getJob(`schedule-${id}`);
         if (oldJob) {
           await oldJob.remove();
         }
@@ -63,7 +64,7 @@ export async function PATCH(
 
         // Fetch full post data to re-enqueue
         const fullPost = await prisma.scheduledPost.findUniqueOrThrow({
-          where: { id: params.id },
+          where: { id },
           select: {
             platform: true,
             socialConnectionId: true,
@@ -75,7 +76,7 @@ export async function PATCH(
         await queue.add(
           "post",
           {
-            scheduledPostId: params.id,
+            scheduledPostId: id,
             platform: fullPost.platform,
             socialConnectionId: fullPost.socialConnectionId ?? "",
             clipId: fullPost.clipId ?? undefined,
@@ -83,19 +84,19 @@ export async function PATCH(
           },
           {
             delay: Math.max(0, delayMs),
-            jobId: `schedule-${params.id}`,
+            jobId: `schedule-${id}`,
           },
         );
       } catch (requeueError) {
         console.warn(
-          `[api] Failed to reschedule BullMQ job for post ${params.id}:`,
+          `[api] Failed to reschedule BullMQ job for post ${id}:`,
           requeueError,
         );
       }
     }
 
     const updated = await prisma.scheduledPost.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(input.scheduledAt
           ? { scheduledAt: new Date(input.scheduledAt) }
@@ -118,7 +119,7 @@ export async function PATCH(
         { status: 400 },
       );
     }
-    console.error(`[api] PATCH /api/v1/schedule/${params.id} error:`, error);
+    console.error(`[api] PATCH /api/v1/schedule error:`, error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -128,16 +129,17 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const { id } = await params;
     const userId = await getSessionUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const post = await prisma.scheduledPost.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { userId: true, status: true },
     });
 
@@ -157,13 +159,13 @@ export async function DELETE(
     if (post.status === "queued") {
       try {
         const queue = scheduleQueue();
-        const job = await queue.getJob(`schedule-${params.id}`);
+        const job = await queue.getJob(`schedule-${id}`);
         if (job) {
           await job.remove();
         }
       } catch (removeError) {
         console.warn(
-          `[api] Failed to remove BullMQ job for post ${params.id}:`,
+          `[api] Failed to remove BullMQ job for post ${id}:`,
           removeError,
         );
       }
@@ -171,13 +173,13 @@ export async function DELETE(
 
     // Mark as cancelled rather than hard-deleting for audit trail
     await prisma.scheduledPost.update({
-      where: { id: params.id },
+      where: { id },
       data: { status: "cancelled" },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(`[api] DELETE /api/v1/schedule/${params.id} error:`, error);
+    console.error(`[api] DELETE /api/v1/schedule error:`, error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
