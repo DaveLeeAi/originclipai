@@ -11,11 +11,13 @@ interface JobProgress {
   analyze: StepStatus;
   render: StepStatus;
   details?: {
-    speakersFound?: number;
+    speakers_found?: number;
     clipsFound?: number;
     textsGenerated?: number;
-    clipsRendered?: number;
-    clipsTotal?: number;
+    insightsExtracted?: number;
+    quotesExtracted?: number;
+    clips_rendered?: number;
+    clips_total?: number;
   };
 }
 
@@ -25,6 +27,8 @@ interface ProgressChecklistProps {
   jobId: string;
   sourceTitle?: string;
   isTextOnly?: boolean;
+  initialStatus?: string;
+  initialError?: string;
 }
 
 const STEPS = [
@@ -34,19 +38,22 @@ const STEPS = [
   { key: 'render' as const, label: 'Rendering clips with captions', completeLabel: 'Clips rendered' },
 ];
 
-export function ProgressChecklist({ jobId, sourceTitle, isTextOnly }: ProgressChecklistProps) {
+export function ProgressChecklist({ jobId, sourceTitle, isTextOnly, initialStatus, initialError }: ProgressChecklistProps) {
   const [progress, setProgress] = useState<JobProgress>({
     ingest: 'pending',
     transcribe: 'pending',
     analyze: 'pending',
     render: 'pending',
   });
-  const [, setJobStatus] = useState<string>('created');
-  const [error, setError] = useState<string | null>(null);
+  const [, setJobStatus] = useState<string>(initialStatus ?? 'created');
+  const [error, setError] = useState<string | null>(initialError ?? null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const router = useRouter();
 
   useEffect(() => {
+    // If already failed, don't bother connecting to SSE
+    if (initialStatus === 'failed') return;
+
     const es = new EventSource(`/api/v1/jobs/${jobId}/stream`);
     eventSourceRef.current = es;
 
@@ -73,11 +80,14 @@ export function ProgressChecklist({ jobId, sourceTitle, isTextOnly }: ProgressCh
     const handleDoneEvent = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
-        setJobStatus(data.status ?? 'complete');
+        const status = data.status ?? 'complete';
+        setJobStatus(status);
         es.close();
-        setTimeout(() => {
-          router.push(`/jobs/${jobId}/review`);
-        }, 1500);
+        if (status === 'complete') {
+          setTimeout(() => {
+            router.push(`/jobs/${jobId}/review`);
+          }, 1500);
+        }
       } catch {
         // Ignore parse errors
       }
@@ -119,7 +129,40 @@ export function ProgressChecklist({ jobId, sourceTitle, isTextOnly }: ProgressCh
       }
     };
 
+    // Stale-job detector: if no progress update within 30s, poll the REST API
+    // This catches the case where workers aren't running or SSE is broken
+    const staleTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/v1/jobs/${jobId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status === 'complete') {
+          es.close();
+          router.push(`/jobs/${jobId}/review`);
+        } else if (data.status === 'failed') {
+          es.close();
+          setError(data.error ?? 'Processing failed');
+          setJobStatus('failed');
+        } else if (data.status === 'created') {
+          setError('Job is queued but no worker has picked it up yet. Make sure workers are running: npm run workers:dev');
+        }
+        // If still processing, update progress from REST API as fallback
+        if (data.progress) {
+          setProgress({
+            ingest: data.progress.ingest ?? 'pending',
+            transcribe: data.progress.transcribe ?? 'pending',
+            analyze: data.progress.analyze ?? 'pending',
+            render: data.progress.render ?? 'pending',
+            details: data.progress.details ?? {},
+          });
+        }
+      } catch {
+        // Ignore REST fallback errors
+      }
+    }, 30_000);
+
     return () => {
+      clearTimeout(staleTimer);
       es.close();
     };
   }, [jobId, router]);
@@ -263,15 +306,18 @@ function getStepDetail(key: string, progress: JobProgress): string | null {
 
   switch (key) {
     case 'transcribe':
-      return d.speakersFound ? `(${d.speakersFound} speakers)` : null;
-    case 'analyze':
-      if (d.clipsFound && d.textsGenerated) {
-        return `(${d.clipsFound} clips, ${d.textsGenerated} texts)`;
-      }
-      return d.clipsFound ? `(${d.clipsFound} clips)` : null;
+      return d.speakers_found ? `(${d.speakers_found} speakers)` : null;
+    case 'analyze': {
+      const parts: string[] = [];
+      if (d.clipsFound) parts.push(`${d.clipsFound} clips`);
+      if (d.textsGenerated) parts.push(`${d.textsGenerated} texts`);
+      if (d.insightsExtracted) parts.push(`${d.insightsExtracted} insights`);
+      if (d.quotesExtracted) parts.push(`${d.quotesExtracted} quotes`);
+      return parts.length > 0 ? `(${parts.join(', ')})` : null;
+    }
     case 'render':
-      if (d.clipsRendered !== undefined && d.clipsTotal) {
-        return `(${d.clipsRendered}/${d.clipsTotal})`;
+      if (d.clips_rendered !== undefined && d.clips_total) {
+        return `(${d.clips_rendered}/${d.clips_total})`;
       }
       return null;
     default:
