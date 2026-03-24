@@ -1,0 +1,319 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────
+
+enum SourceType {
+  youtube_url
+  video_url
+  video_upload
+  audio_upload
+  article_url
+  pdf_upload
+}
+
+enum JobStatus {
+  created
+  ingesting
+  transcribing
+  analyzing
+  rendering
+  complete
+  failed
+  cancelled
+}
+
+enum TranscriptionEngine {
+  whisper
+  assemblyai
+}
+
+enum ClipStatus {
+  review
+  approved
+  rejected
+}
+
+enum SpeakerRole {
+  host
+  guest
+  solo
+  unknown
+}
+
+enum TextOutputType {
+  linkedin_post
+  x_thread
+  newsletter_section
+  summary
+  chapter_markers
+  social_caption
+  blog_draft
+  show_notes
+  custom
+}
+
+enum TextOutputStatus {
+  draft
+  approved
+  scheduled
+  posted
+}
+
+enum Platform {
+  youtube
+  tiktok
+  linkedin
+  x
+  instagram
+  facebook
+}
+
+enum PostStatus {
+  queued
+  posting
+  posted
+  failed
+  cancelled
+}
+
+enum Plan {
+  free
+  creator
+  pro
+  business
+}
+
+// ─── Models ─────────────────────────────────────────────────────────
+
+model Profile {
+  id                    String   @id @db.Uuid
+  email                 String
+  displayName           String?  @map("display_name")
+  avatarUrl             String?  @map("avatar_url")
+  plan                  Plan     @default(free)
+  stripeCustomerId      String?  @map("stripe_customer_id")
+  stripeSubscriptionId  String?  @map("stripe_subscription_id")
+  minutesUsedThisCycle  Int      @default(0) @map("minutes_used_this_cycle")
+  minutesLimit          Int      @default(30) @map("minutes_limit")
+  billingCycleStart     DateTime? @map("billing_cycle_start")
+  defaultCaptionStyle   String   @default("karaoke") @map("default_caption_style")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
+
+  jobs              Job[]
+  scheduledPosts    ScheduledPost[]
+  socialConnections SocialConnection[]
+  promptTemplates   PromptTemplate[]
+  apiKeys           ApiKey[]
+
+  @@index([stripeCustomerId])
+  @@map("profiles")
+}
+
+model Job {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  sourceType            SourceType @map("source_type")
+  sourceUrl             String?   @map("source_url")
+  sourceFileKey         String?   @map("source_file_key")
+  sourceTitle           String?   @map("source_title")
+  sourceDurationSeconds Float?    @map("source_duration_seconds")
+  sourceMetadata        Json      @default("{}") @map("source_metadata")
+  status                JobStatus @default(created)
+  currentStep           String?   @map("current_step")
+  progress              Json      @default("{}") @map("progress")
+  error                 String?
+  clipCount             Int       @default(0) @map("clip_count")
+  textOutputCount       Int       @default(0) @map("text_output_count")
+  minutesConsumed       Float     @default(0) @map("minutes_consumed")
+  processingStartedAt   DateTime? @map("processing_started_at")
+  processingCompletedAt DateTime? @map("processing_completed_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user        Profile       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transcript  Transcript?
+  clips       Clip[]
+  textOutputs TextOutput[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("jobs")
+}
+
+model Transcript {
+  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId           String             @unique @map("job_id") @db.Uuid
+  fullText        String             @map("full_text")
+  language        String             @default("en")
+  segments        Json               @default("[]")
+  speakers        Json               @default("[]")
+  wordTimestamps  Json               @default("[]") @map("word_timestamps")
+  engine          TranscriptionEngine
+  durationSeconds Float?             @map("duration_seconds")
+  wordCount       Int?               @map("word_count")
+  confidenceAvg   Float?             @map("confidence_avg")
+  createdAt       DateTime           @default(now()) @map("created_at")
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@map("transcripts")
+}
+
+model Clip {
+  id                String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId             String     @map("job_id") @db.Uuid
+  startTime         Float      @map("start_time")
+  endTime           Float      @map("end_time")
+  duration          Float
+  title             String
+  hook              String?
+  transcriptExcerpt String     @map("transcript_excerpt")
+  score             Int
+  scoreFactors      Json       @default("{}") @map("score_factors")
+  primarySpeakerId  String?    @map("primary_speaker_id")
+  speakerRole       SpeakerRole @default(unknown) @map("speaker_role")
+  speakersPresent   Json       @default("[]") @map("speakers_present")
+  status            ClipStatus @default(review)
+  captionStyle      String     @default("karaoke") @map("caption_style")
+  renderedFiles     Json       @default("{}") @map("rendered_files")
+  renderStatus      String     @default("pending") @map("render_status")
+  socialCaption     String?    @map("social_caption")
+  hashtags          Json       @default("[]")
+  sortOrder         Int        @default(0) @map("sort_order")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  job            Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  scheduledPosts ScheduledPost[]
+
+  @@index([jobId])
+  @@index([jobId, status])
+  @@index([jobId, score(sort: Desc)])
+  @@map("clips")
+}
+
+model TextOutput {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId            String           @map("job_id") @db.Uuid
+  type             TextOutputType
+  label            String
+  content          String
+  wordCount        Int              @default(0) @map("word_count")
+  threadPosts      Json?            @map("thread_posts")
+  status           TextOutputStatus @default(draft)
+  promptTemplateId String?          @map("prompt_template_id") @db.Uuid
+  metadata         Json             @default("{}")
+  sortOrder        Int              @default(0) @map("sort_order")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  job            Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  scheduledPosts ScheduledPost[]
+
+  @@index([jobId])
+  @@index([jobId, type])
+  @@map("text_outputs")
+}
+
+model ScheduledPost {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String    @map("user_id") @db.Uuid
+  clipId             String?   @map("clip_id") @db.Uuid
+  textOutputId       String?   @map("text_output_id") @db.Uuid
+  platform           Platform
+  socialConnectionId String?   @map("social_connection_id") @db.Uuid
+  scheduledAt        DateTime  @map("scheduled_at")
+  status             PostStatus @default(queued)
+  platformPostId     String?   @map("platform_post_id")
+  platformPostUrl    String?   @map("platform_post_url")
+  error              String?
+  retryCount         Int       @default(0) @map("retry_count")
+  lastRetryAt        DateTime? @map("last_retry_at")
+  contentSnapshot    Json?     @map("content_snapshot")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user             Profile           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clip             Clip?             @relation(fields: [clipId], references: [id], onDelete: SetNull)
+  textOutput       TextOutput?       @relation(fields: [textOutputId], references: [id], onDelete: SetNull)
+  socialConnection SocialConnection? @relation(fields: [socialConnectionId], references: [id])
+
+  @@index([userId])
+  @@index([status, scheduledAt])
+  @@index([clipId])
+  @@index([textOutputId])
+  @@map("scheduled_posts")
+}
+
+model SocialConnection {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  platform          Platform
+  platformUserId    String?   @map("platform_user_id")
+  platformUsername  String?   @map("platform_username")
+  platformAvatarUrl String?   @map("platform_avatar_url")
+  accessToken       String    @map("access_token")
+  refreshToken      String?   @map("refresh_token")
+  tokenExpiresAt    DateTime? @map("token_expires_at")
+  scopes            Json      @default("[]")
+  isActive          Boolean   @default(true) @map("is_active")
+  lastUsedAt        DateTime? @map("last_used_at")
+  error             String?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user           Profile         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledPosts ScheduledPost[]
+
+  @@unique([userId, platform])
+  @@index([userId])
+  @@map("social_connections")
+}
+
+model PromptTemplate {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String  @map("user_id") @db.Uuid
+  name        String
+  outputType  TextOutputType @default(custom) @map("output_type")
+  promptText  String  @map("prompt_text")
+  description String?
+  isActive    Boolean @default(true) @map("is_active")
+  usageCount  Int     @default(0) @map("usage_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("prompt_templates")
+}
+
+model ApiKey {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  keyPrefix  String    @map("key_prefix")
+  keyHash    String    @map("key_hash")
+  name       String    @default("Default")
+  isActive   Boolean   @default(true) @map("is_active")
+  lastUsedAt DateTime? @map("last_used_at")
+  usageCount Int       @default(0) @map("usage_count")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyPrefix])
+  @@map("api_keys")
+}
