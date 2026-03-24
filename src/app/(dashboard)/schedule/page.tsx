@@ -1,39 +1,48 @@
-import { prisma } from '@/lib/db/client';
-import { getSessionUserId } from '@/lib/auth';
-import { redirect } from 'next/navigation';
-import { SchedulePageClient } from '@/components/schedule/schedule-page-client';
+// src/app/(dashboard)/schedule/page.tsx
+'use client';
 
-export default async function SchedulePage() {
-  const userId = await getSessionUserId();
-  if (!userId) redirect('/sign-in');
+import { useScheduledPosts } from '@/lib/hooks/use-jobs';
+import { ScheduleGrid } from '@/components/schedule/schedule-grid';
 
-  const posts = await prisma.scheduledPost.findMany({
-    where: { userId },
-    orderBy: { scheduledAt: 'asc' },
-    include: {
-      clip: {
-        select: { id: true, title: true, duration: true, score: true },
-      },
-      textOutput: {
-        select: { id: true, label: true, type: true, wordCount: true },
-      },
-    },
-  });
+export default function SchedulePage() {
+  const { posts, refresh } = useScheduledPosts();
 
-  const items = posts.map((p) => ({
-    id: p.id,
-    type: (p.clipId ? 'clip' : 'text') as 'clip' | 'text',
-    title: p.clip?.title ?? p.textOutput?.label ?? 'Untitled',
-    duration: p.clip?.duration ?? undefined,
-    score: p.clip?.score ?? undefined,
-    wordCount: p.textOutput?.wordCount ?? undefined,
-    platforms: [p.platform],
-    scheduledAt: p.scheduledAt ? new Date(p.scheduledAt) : undefined,
-    status: p.status as 'queued' | 'posting' | 'posted' | 'failed',
-    platformPostUrl: p.platformPostUrl ?? undefined,
-    error: p.error ?? undefined,
-    textType: p.textOutput?.type ?? undefined,
-  }));
+  const handleSetTime = async (id: string, time: Date) => {
+    await fetch(`/api/v1/schedule/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scheduledAt: time.toISOString() }),
+    });
+    refresh();
+  };
 
-  return <SchedulePageClient initialItems={items} />;
+  const handleCancel = async (id: string) => {
+    await fetch(`/api/v1/schedule/${id}`, { method: 'DELETE' });
+    refresh();
+  };
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold tracking-tight">Schedule</h1>
+        <p className="text-sm text-[#6b6960]">
+          {posts.length} items in queue
+        </p>
+      </div>
+      <ScheduleGrid
+        items={posts.map((p: any) => ({
+          id: p.id,
+          type: p.clipId ? 'clip' : 'text',
+          title: p.contentTitle ?? 'Untitled',
+          platforms: [p.platform],
+          scheduledAt: p.scheduledAt ? new Date(p.scheduledAt) : undefined,
+          status: p.status.toLowerCase(),
+          platformPostUrl: p.platformPostUrl,
+          error: p.error,
+        }))}
+        onSetTime={handleSetTime}
+        onCancel={handleCancel}
+      />
+    </div>
+  );
 }

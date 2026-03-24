@@ -1,9 +1,18 @@
+// src/app/(dashboard)/loading.tsx
+
+import { CardSkeleton } from '@/components/shared/error-boundary';
+
 export default function DashboardLoading() {
   return (
-    <div className="flex h-full items-center justify-center">
-      <div className="text-center">
-        <div className="mx-auto mb-3 h-8 w-8 animate-pulse rounded-lg bg-[#5046e5]/10" />
-        <p className="text-sm text-[#a09e96]">Loading...</p>
+    <div className="p-6">
+      <div className="mb-6">
+        <div className="mb-2 h-5 w-24 animate-pulse rounded bg-[#e4e2dd]" />
+        <div className="h-3 w-16 animate-pulse rounded bg-[#e4e2dd]" />
+      </div>
+      <div className="space-y-3">
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
       </div>
     </div>
   );

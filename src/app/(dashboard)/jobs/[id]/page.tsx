@@ -1,14 +1,21 @@
+// src/app/(dashboard)/jobs/[id]/page.tsx
+
+import { createClient } from '@/lib/auth/server';
+import { db } from '@/lib/db/client';
 import { notFound, redirect } from 'next/navigation';
-import { prisma } from '@/lib/db/client';
 import { ProgressChecklist } from '@/components/processing/progress-checklist';
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default async function JobProcessingPage({ params }: Props) {
-  const job = await prisma.job.findUnique({
-    where: { id: params.id },
+export default async function JobPage({ params }: Props) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const job = await db.job.findFirst({
+    where: { id, userId: user!.id },
     select: {
       id: true,
       status: true,
@@ -19,12 +26,12 @@ export default async function JobProcessingPage({ params }: Props) {
 
   if (!job) notFound();
 
-  // If already complete, redirect straight to review
-  if (job.status === 'complete') {
-    redirect(`/jobs/${job.id}/review`);
+  // If already complete, redirect to review
+  if (job.status === 'COMPLETE') {
+    redirect(`/jobs/${id}/review`);
   }
 
-  const isTextOnly = job.sourceType === 'article_url' || job.sourceType === 'pdf_upload';
+  const isTextOnly = ['ARTICLE_URL', 'PDF_UPLOAD'].includes(job.sourceType);
 
   return (
     <ProgressChecklist

@@ -1,46 +1,97 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+// src/middleware.ts
+
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Edge middleware — protects dashboard routes.
+ * Middleware refreshes the Supabase auth session on every request.
+ * This ensures the session stays alive and tokens are refreshed.
  *
- * Phase 3: checks for session_user_id cookie or DEFAULT_USER_ID.
- * Phase 5: will verify Supabase Auth JWT.
+ * Protected routes: everything under /(dashboard)/
+ * Public routes: /(marketing)/, /(auth)/, /api/webhooks/
  */
-export function middleware(request: NextRequest): NextResponse {
-  const { pathname } = request.nextUrl;
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request });
 
-  // Public routes — never redirect
-  const publicPaths = ['/sign-in', '/sign-up', '/api/'];
-  if (publicPaths.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            request.cookies.set(name, value),
+          );
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
+  // Refresh the session
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Check if the route requires auth
+  const isProtectedRoute =
+    !request.nextUrl.pathname.startsWith('/sign-') &&
+    !request.nextUrl.pathname.startsWith('/api/webhooks') &&
+    !request.nextUrl.pathname.startsWith('/api/v1/openapi') &&
+    !request.nextUrl.pathname.startsWith('/compare') &&
+    !request.nextUrl.pathname.startsWith('/blog') &&
+    !request.nextUrl.pathname.startsWith('/pricing') &&
+    !request.nextUrl.pathname.startsWith('/features') &&
+    !request.nextUrl.pathname.startsWith('/use-cases') &&
+    request.nextUrl.pathname !== '/';
+
+  // Landing page at / is public. Dashboard home is also /, but the (dashboard) layout handles the redirect.
+  // For API routes, check bearer token auth
+  if (request.nextUrl.pathname.startsWith('/api/v1/') && !request.nextUrl.pathname.includes('openapi')) {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader?.startsWith('Bearer sk_')) {
+      // API key auth — let the route handler validate it
+      return supabaseResponse;
+    }
+    // Otherwise, require Supabase session
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
   }
 
-  // Check for session
-  const sessionUserId =
-    request.cookies.get('session_user_id')?.value ??
-    process.env.DEFAULT_USER_ID;
-
-  if (!sessionUserId) {
-    const signInUrl = new URL('/sign-in', request.url);
-    signInUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(signInUrl);
+  // Redirect unauthenticated users away from protected pages
+  if (isProtectedRoute && !user && !request.nextUrl.pathname.startsWith('/api/')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/sign-in';
+    url.searchParams.set('redirect', request.nextUrl.pathname);
+    return NextResponse.redirect(url);
   }
 
-  // Inject user ID header for API routes to use
-  const response = NextResponse.next();
-  response.headers.set('x-user-id', sessionUserId);
-  return response;
+  // Redirect authenticated users away from auth pages
+  if (user && (request.nextUrl.pathname === '/sign-in' || request.nextUrl.pathname === '/sign-up')) {
+    const redirect = request.nextUrl.searchParams.get('redirect') ?? '/';
+    const url = request.nextUrl.clone();
+    url.pathname = redirect;
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all paths except:
-     * - _next (Next.js internals)
-     * - static files (images, fonts, etc.)
-     * - favicon.ico
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public files (images, etc.)
      */
-    '/((?!_next|.*\\..*|favicon\\.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
