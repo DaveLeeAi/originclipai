@@ -141,7 +141,7 @@ npm run typecheck        # TypeScript strict check
 | 2 | Done | Video processing (reframe, captions, face tracking) |
 | 3 | Done | Dashboard UI (jobs, review queue, settings) |
 | 4 | Done | Scheduling, extended inputs, custom prompts, export |
-| 5 | Next | API keys, Stripe billing, onboarding, landing page |
+| 5 | Done | API keys, Stripe billing, onboarding, landing page, auth-aware nav |
 
 ## License
 
