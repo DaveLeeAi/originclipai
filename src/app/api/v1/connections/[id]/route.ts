@@ -1,30 +1,27 @@
+// src/app/api/v1/connections/[id]/route.ts
+
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/client';
-import { getSessionUserId } from '@/lib/auth';
+import { getUser } from '@/lib/auth/server';
+import { db } from '@/lib/db/client';
 
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
-  try {
-    const userId = await getSessionUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const user = await getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const conn = await prisma.socialConnection.findUnique({
-      where: { id: params.id },
-      select: { userId: true },
-    });
+  const { id } = await params;
 
-    if (!conn || conn.userId !== userId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
+  const connection = await db.socialConnection.findFirst({
+    where: { id, userId: user.id },
+  });
 
-    await prisma.socialConnection.delete({ where: { id: params.id } });
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error(`[api] DELETE /api/v1/connections/${params.id} error:`, error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  if (!connection) {
+    return NextResponse.json({ error: 'Connection not found' }, { status: 404 });
   }
+
+  await db.socialConnection.delete({ where: { id } });
+
+  return NextResponse.json({ success: true });
 }

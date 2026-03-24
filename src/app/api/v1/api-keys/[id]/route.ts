@@ -1,34 +1,33 @@
+// src/app/api/v1/api-keys/[id]/route.ts
+
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/client';
-import { getSessionUserId } from '@/lib/auth';
+import { getUser } from '@/lib/auth/server';
+import { db } from '@/lib/db/client';
 
+/**
+ * DELETE /api/v1/api-keys/:id — revoke an API key
+ */
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
-  try {
-    const userId = await getSessionUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const user = await getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const key = await prisma.apiKey.findUnique({
-      where: { id: params.id },
-      select: { userId: true },
-    });
+  const { id } = await params;
 
-    if (!key || key.userId !== userId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
+  const key = await db.apiKey.findFirst({
+    where: { id, userId: user.id },
+  });
 
-    await prisma.apiKey.update({
-      where: { id: params.id },
-      data: { isActive: false, revokedAt: new Date() },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error(`[api] DELETE /api/v1/api-keys/${params.id} error:`, error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  if (!key) {
+    return NextResponse.json({ error: 'Key not found' }, { status: 404 });
   }
+
+  await db.apiKey.update({
+    where: { id },
+    data: { isActive: false, revokedAt: new Date() },
+  });
+
+  return NextResponse.json({ success: true });
 }

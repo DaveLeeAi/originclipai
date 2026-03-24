@@ -1,83 +1,69 @@
+// src/app/api/v1/api-keys/route.ts
+
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/client';
-import { getSessionUserId } from '@/lib/auth';
-import { z } from 'zod';
-import { createHash, randomBytes } from 'crypto';
+import { getUser } from '@/lib/auth/server';
+import { db } from '@/lib/db/client';
+import { checkFeatureAccess } from '@/lib/billing';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
-const createKeySchema = z.object({
-  name: z.string().min(1).max(100).default('Default'),
-});
+/**
+ * GET /api/v1/api-keys — list user's API keys
+ */
+export async function GET() {
+  const user = await getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-export async function GET(): Promise<NextResponse> {
-  try {
-    const userId = await getSessionUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const keys = await db.apiKey.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      keyPrefix: true,
+      name: true,
+      isActive: true,
+      lastUsedAt: true,
+      usageCount: true,
+      createdAt: true,
+      revokedAt: true,
+    },
+  });
 
-    const keys = await prisma.apiKey.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        keyPrefix: true,
-        name: true,
-        isActive: true,
-        lastUsedAt: true,
-        usageCount: true,
-        createdAt: true,
-      },
-    });
-
-    return NextResponse.json({ keys });
-  } catch (error) {
-    console.error('[api] GET /api/v1/api-keys error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+  return NextResponse.json({ keys });
 }
 
-export async function POST(request: Request): Promise<NextResponse> {
-  try {
-    const userId = await getSessionUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+/**
+ * POST /api/v1/api-keys — create a new API key
+ */
+export async function POST(req: Request) {
+  const user = await getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body: unknown = await request.json();
-    const input = createKeySchema.parse(body);
-
-    // Generate API key
-    const rawKey = `oc_${randomBytes(32).toString('hex')}`;
-    const keyPrefix = rawKey.slice(0, 10);
-    const keyHash = createHash('sha256').update(rawKey).digest('hex');
-
-    const apiKey = await prisma.apiKey.create({
-      data: {
-        userId,
-        keyPrefix,
-        keyHash,
-        name: input.name,
-      },
-      select: {
-        id: true,
-        keyPrefix: true,
-        name: true,
-        isActive: true,
-        lastUsedAt: true,
-        usageCount: true,
-        createdAt: true,
-      },
-    });
-
-    return NextResponse.json({ key: rawKey, apiKey }, { status: 201 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
-        { status: 400 },
-      );
-    }
-    console.error('[api] POST /api/v1/api-keys error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  const hasAccess = await checkFeatureAccess(user.id, 'hasApi');
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'API access requires Pro or Business plan' }, { status: 403 });
   }
+
+  const { name } = await req.json();
+
+  if (!name || typeof name !== 'string' || name.length > 100) {
+    return NextResponse.json({ error: 'Invalid key name' }, { status: 400 });
+  }
+
+  // Generate key: sk_live_ + 32 random bytes as hex
+  const rawKey = `sk_live_${crypto.randomBytes(32).toString('hex')}`;
+  const keyPrefix = rawKey.slice(0, 16); // sk_live_a1b2c3d4
+  const keyHash = await bcrypt.hash(rawKey, 10);
+
+  await db.apiKey.create({
+    data: {
+      userId: user.id,
+      keyPrefix,
+      keyHash,
+      name: name.trim(),
+    },
+  });
+
+  // Return the raw key ONCE — it's never stored or shown again
+  return NextResponse.json({ key: rawKey, prefix: keyPrefix }, { status: 201 });
 }

@@ -1,29 +1,29 @@
+// src/app/api/v1/connections/route.ts
+
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/client';
-import { getSessionUserId } from '@/lib/auth';
+import { getUser } from '@/lib/auth/server';
+import { db } from '@/lib/db/client';
 
-export async function GET(): Promise<NextResponse> {
-  try {
-    const userId = await getSessionUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+/**
+ * GET /api/v1/connections — list user's social connections
+ */
+export async function GET() {
+  const user = await getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const connections = await prisma.socialConnection.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        platform: true,
-        platformUsername: true,
-        isActive: true,
-        lastUsedAt: true,
-        error: true,
-      },
-    });
+  const connections = await db.socialConnection.findMany({
+    where: { userId: user.id },
+    select: {
+      id: true,
+      platform: true,
+      platformUsername: true,
+      platformAvatarUrl: true,
+      isActive: true,
+      lastUsedAt: true,
+      error: true,
+      createdAt: true,
+    },
+  });
 
-    return NextResponse.json({ connections });
-  } catch (error) {
-    console.error('[api] GET /api/v1/connections error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+  return NextResponse.json({ connections });
 }
