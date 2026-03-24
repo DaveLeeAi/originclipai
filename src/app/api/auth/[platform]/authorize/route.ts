@@ -1,53 +1,46 @@
+// src/app/api/auth/[platform]/authorize/route.ts
+
 import { NextResponse, type NextRequest } from 'next/server';
-import { getSocialAdapter } from '@/lib/social';
 import { getUser } from '@/lib/auth/server';
+import { getSocialAdapter } from '@/lib/social';
 import crypto from 'crypto';
 
-const VALID_PLATFORMS = ['youtube', 'tiktok', 'linkedin', 'x'] as const;
-type ValidPlatform = (typeof VALID_PLATFORMS)[number];
-
-function isValidPlatform(platform: string): platform is ValidPlatform {
-  return (VALID_PLATFORMS as readonly string[]).includes(platform);
-}
-
+/**
+ * GET /api/auth/:platform/authorize
+ * Redirects the user to the platform's OAuth consent page.
+ */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { platform: string } },
-): Promise<NextResponse> {
+  { params }: { params: Promise<{ platform: string }> },
+) {
+  const user = await getUser();
+  if (!user) {
+    return NextResponse.redirect(new URL('/sign-in', request.url));
+  }
+
+  const { platform } = await params;
+
   try {
-    const { platform } = params;
-
-    if (!isValidPlatform(platform)) {
-      const origin = new URL(request.url).origin;
-      return NextResponse.redirect(
-        `${origin}/settings/connections?error=unsupported_platform`,
-      );
-    }
-
-    // Require authenticated user
-    const user = await getUser();
-    if (!user) {
-      const origin = new URL(request.url).origin;
-      return NextResponse.redirect(`${origin}/sign-in`);
-    }
-
     const adapter = getSocialAdapter(platform);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!appUrl) {
-      throw new Error('NEXT_PUBLIC_APP_URL is not configured');
-    }
+    const state = crypto.randomBytes(16).toString('hex');
 
-    const redirectUri = `${appUrl}/api/auth/${platform}/callback`;
-    const state = crypto.randomUUID();
-
+    // Store state in cookie for CSRF verification on callback
+    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/${platform}/callback`;
     const authUrl = adapter.getAuthUrl(redirectUri, state);
 
-    return NextResponse.redirect(authUrl);
-  } catch (error: unknown) {
-    console.error('[oauth] authorize error:', error);
-    const origin = new URL(request.url).origin;
+    const response = NextResponse.redirect(authUrl);
+    response.cookies.set(`oauth_state_${platform}`, state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 600, // 10 minutes
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return response;
+  } catch (error: any) {
     return NextResponse.redirect(
-      `${origin}/settings/connections?error=auth_init_failed`,
+      new URL(`/settings/connections?error=${encodeURIComponent(error.message)}`, request.url),
     );
   }
 }
