@@ -1,0 +1,491 @@
+// src/app/api/v1/openapi.json
+// OpenAPI 3.1 specification for OriginClipAI public API
+// Served at GET /api/v1/openapi.json
+
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OriginClipAI API",
+    "description": "Headless content repurposing engine. Ingest long-form content, generate video clips and text outputs, schedule to social platforms.",
+    "version": "1.0.0",
+    "contact": {
+      "email": "api@originclipai.com",
+      "url": "https://originclipai.com/docs/api"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://app.originclipai.com/api/v1",
+      "description": "Production"
+    }
+  ],
+  "security": [
+    { "bearerAuth": [] }
+  ],
+  "paths": {
+    "/jobs": {
+      "post": {
+        "summary": "Create a processing job",
+        "description": "Submit a URL or reference an uploaded file to start the content repurposing pipeline.",
+        "operationId": "createJob",
+        "tags": ["Jobs"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "YouTube URL, article URL, or direct video URL"
+                  },
+                  "fileKey": {
+                    "type": "string",
+                    "description": "Storage key for an uploaded file (from upload endpoint)"
+                  },
+                  "sourceType": {
+                    "type": "string",
+                    "enum": ["youtube_url", "video_url", "video_upload", "audio_upload", "article_url", "pdf_upload"],
+                    "description": "Auto-detected if not provided"
+                  },
+                  "options": {
+                    "type": "object",
+                    "properties": {
+                      "minClipDuration": { "type": "integer", "default": 30, "description": "Minimum clip duration in seconds" },
+                      "maxClipDuration": { "type": "integer", "default": 90, "description": "Maximum clip duration in seconds" },
+                      "targetClips": { "type": "integer", "default": 15, "description": "Target number of clip candidates" },
+                      "captionStyle": { "type": "string", "default": "karaoke", "enum": ["karaoke", "boxed", "minimal", "impact", "subtitle"] },
+                      "aspectRatios": {
+                        "type": "array",
+                        "items": { "type": "string", "enum": ["9x16", "1x1", "16x9"] },
+                        "default": ["9x16"]
+                      },
+                      "textOutputs": {
+                        "type": "array",
+                        "items": { "type": "string", "enum": ["linkedin_post", "x_thread", "newsletter_section", "summary", "chapter_markers", "blog_draft"] },
+                        "default": ["linkedin_post", "x_thread", "newsletter_section", "summary", "chapter_markers"]
+                      },
+                      "customPromptIds": {
+                        "type": "array",
+                        "items": { "type": "string" },
+                        "description": "IDs of custom prompt templates to execute"
+                      }
+                    }
+                  }
+                },
+                "oneOf": [
+                  { "required": ["url"] },
+                  { "required": ["fileKey"] }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Job created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "jobId": { "type": "string", "format": "uuid" },
+                    "status": { "type": "string" },
+                    "streamUrl": { "type": "string", "description": "SSE endpoint for real-time progress" }
+                  }
+                }
+              }
+            }
+          },
+          "402": { "description": "Usage limit exceeded" },
+          "422": { "description": "Invalid input" }
+        }
+      },
+      "get": {
+        "summary": "List jobs",
+        "operationId": "listJobs",
+        "tags": ["Jobs"],
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of jobs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "jobs": { "type": "array", "items": { "$ref": "#/components/schemas/Job" } },
+                    "total": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}": {
+      "get": {
+        "summary": "Get job status",
+        "operationId": "getJob",
+        "tags": ["Jobs"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } }
+          }
+        }
+      }
+    },
+    "/jobs/{id}/clips": {
+      "get": {
+        "summary": "List clip candidates for a job",
+        "operationId": "listClips",
+        "tags": ["Clips"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["review", "approved", "rejected"] } },
+          { "name": "speaker", "in": "query", "schema": { "type": "string" }, "description": "Filter by speaker ID" }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "clips": { "type": "array", "items": { "$ref": "#/components/schemas/Clip" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}/texts": {
+      "get": {
+        "summary": "List text outputs for a job",
+        "operationId": "listTexts",
+        "tags": ["Text Outputs"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "type", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "textOutputs": { "type": "array", "items": { "$ref": "#/components/schemas/TextOutput" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clips/{id}": {
+      "patch": {
+        "summary": "Update clip status",
+        "operationId": "updateClip",
+        "tags": ["Clips"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "enum": ["approved", "rejected"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/clips/{id}/download": {
+      "get": {
+        "summary": "Download rendered clip",
+        "operationId": "downloadClip",
+        "tags": ["Clips"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "aspectRatio", "in": "query", "schema": { "type": "string", "default": "9x16" } }
+        ],
+        "responses": {
+          "302": { "description": "Redirect to signed download URL" }
+        }
+      }
+    },
+    "/texts/{id}": {
+      "patch": {
+        "summary": "Update text output",
+        "operationId": "updateText",
+        "tags": ["Text Outputs"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": { "type": "string" },
+                  "status": { "type": "string", "enum": ["draft", "approved"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/texts/{id}/refine": {
+      "post": {
+        "summary": "Refine text output with AI",
+        "operationId": "refineText",
+        "tags": ["Text Outputs"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["instruction"],
+                "properties": {
+                  "instruction": { "type": "string", "description": "Refinement instruction (e.g., 'make it shorter', 'add a stronger hook')" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "refinedText": { "type": "string" },
+                    "wordCount": { "type": "integer" },
+                    "changesMade": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule": {
+      "post": {
+        "summary": "Schedule a post",
+        "operationId": "createScheduledPost",
+        "tags": ["Scheduling"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["platform", "scheduledAt"],
+                "properties": {
+                  "clipId": { "type": "string" },
+                  "textOutputId": { "type": "string" },
+                  "platform": { "type": "string", "enum": ["youtube", "tiktok", "linkedin", "x"] },
+                  "scheduledAt": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Post scheduled" }
+        }
+      },
+      "get": {
+        "summary": "List scheduled posts",
+        "operationId": "listScheduledPosts",
+        "tags": ["Scheduling"],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": { "type": "array", "items": { "$ref": "#/components/schemas/ScheduledPost" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/{id}": {
+      "delete": {
+        "summary": "Cancel a scheduled post",
+        "operationId": "cancelScheduledPost",
+        "tags": ["Scheduling"],
+        "responses": { "200": { "description": "Cancelled" } }
+      }
+    },
+    "/jobs/{id}/stream": {
+      "get": {
+        "summary": "Real-time job progress (SSE)",
+        "operationId": "streamJobProgress",
+        "tags": ["Jobs"],
+        "description": "Server-Sent Events stream for real-time processing progress updates.",
+        "responses": {
+          "200": {
+            "description": "SSE stream",
+            "content": { "text/event-stream": {} }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key from Settings > API Keys. Format: sk_live_xxx"
+      }
+    },
+    "schemas": {
+      "Job": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "sourceType": { "type": "string" },
+          "sourceTitle": { "type": "string" },
+          "sourceDuration": { "type": "number" },
+          "status": { "type": "string", "enum": ["created", "ingesting", "transcribing", "analyzing", "rendering", "complete", "failed"] },
+          "progress": { "type": "object" },
+          "clipCount": { "type": "integer" },
+          "textOutputCount": { "type": "integer" },
+          "error": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "completedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Clip": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "startTime": { "type": "number" },
+          "endTime": { "type": "number" },
+          "duration": { "type": "number" },
+          "score": { "type": "integer" },
+          "scoreFactors": { "type": "object" },
+          "primarySpeakerId": { "type": "string" },
+          "speakerRole": { "type": "string" },
+          "status": { "type": "string", "enum": ["review", "approved", "rejected"] },
+          "renderStatus": { "type": "string" },
+          "socialCaption": { "type": "string" },
+          "downloadUrl": { "type": "string" }
+        }
+      },
+      "TextOutput": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "label": { "type": "string" },
+          "content": { "type": "string" },
+          "wordCount": { "type": "integer" },
+          "status": { "type": "string" }
+        }
+      },
+      "ScheduledPost": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "platform": { "type": "string" },
+          "scheduledAt": { "type": "string", "format": "date-time" },
+          "status": { "type": "string" },
+          "platformPostUrl": { "type": "string" }
+        }
+      }
+    }
+  },
+  "webhooks": {
+    "job.completed": {
+      "post": {
+        "summary": "Job processing completed",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "event": { "type": "string", "const": "job.completed" },
+                  "jobId": { "type": "string" },
+                  "clipCount": { "type": "integer" },
+                  "textOutputCount": { "type": "integer" },
+                  "timestamp": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post.published": {
+      "post": {
+        "summary": "Scheduled post published successfully",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "event": { "type": "string", "const": "post.published" },
+                  "scheduledPostId": { "type": "string" },
+                  "platform": { "type": "string" },
+                  "platformPostUrl": { "type": "string" },
+                  "timestamp": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post.failed": {
+      "post": {
+        "summary": "Scheduled post failed after all retries",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "event": { "type": "string", "const": "post.failed" },
+                  "scheduledPostId": { "type": "string" },
+                  "platform": { "type": "string" },
+                  "error": { "type": "string" },
+                  "timestamp": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
