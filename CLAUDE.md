@@ -458,6 +458,43 @@ WORKER_CONCURRENCY=                    # Override default concurrency per queue
 
 ---
 
+## Development Mock Mode
+
+**Stop burning paid API costs during debugging.** Mock mode replaces all external API calls with local fixture data. See `docs/DEV_MOCK_MODE.md` for full details.
+
+### Quick Start (Zero-Cost Local Dev)
+
+```bash
+# .env.local
+MOCK_AI=true                    # Mock LLM (Anthropic Claude) — fixture responses
+DEV_NO_EXTERNAL_APIS=true       # Mock ALL paid APIs (+ transcription)
+DEV_AUTH_BYPASS=true             # Skip Supabase Auth
+
+# Seed a completed demo job, then start the app
+npm run db:seed-demo
+npm run dev
+```
+
+### Env Flags
+
+| Flag | Effect |
+|------|--------|
+| `MOCK_AI=true` | LLM calls return fixture data. Zero Anthropic cost. |
+| `DEV_NO_EXTERNAL_APIS=true` | Blocks ALL paid APIs: Anthropic, AssemblyAI, Replicate. |
+| `FORCE_REANALYZE=true` | Override dedupe guard — forces re-analysis even if outputs exist. |
+
+### What Gets Mocked
+- **LLM** (clip detection, text generation, insights, quotes, refinement) → fixture JSON
+- **Transcription** (Whisper/AssemblyAI) → fixture transcript (2 speakers, 23 segments)
+- **Queue retries** → disabled for paid queues (`transcribe`, `analyze`) in mock mode
+
+### Switching to Real APIs
+Set `MOCK_AI=false`, `DEV_NO_EXTERNAL_APIS=false`, provide real API keys, and optionally set `FORCE_REANALYZE=true` to regenerate outputs.
+
+All mock operations log with `[MOCK]` prefix — grep for it to verify no paid calls are made.
+
+---
+
 ## Common Commands
 
 ```bash
@@ -470,6 +507,7 @@ npm run db:generate      # Generate Prisma client from schema
 npm run db:migrate       # Create + apply migration
 npm run db:push          # Push schema changes (dev only)
 npm run db:seed          # Seed dev database
+npm run db:seed-demo     # Seed completed demo job (mock mode)
 npm run db:studio        # Open Prisma Studio
 npm run build            # Production build
 npm run lint             # ESLint + Prettier check
