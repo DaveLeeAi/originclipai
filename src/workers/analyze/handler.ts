@@ -3,6 +3,7 @@ import { updateJobProgress, updateJobStatus } from "@/lib/db/job-progress";
 import { getLLMProvider } from "@/lib/providers/llm-anthropic";
 import { getStorageProvider } from "@/lib/providers/storage-supabase";
 import { fireJobCompletedWebhook } from "@/lib/webhooks/dispatcher";
+import { renderQueue } from "@/lib/queue/queues";
 import {
   clipAnalysisPrompt,
   speakerRolesPrompt,
@@ -16,7 +17,7 @@ import {
 } from "@/prompts";
 import { formatDuration } from "@/lib/utils/duration";
 import type { LLMProvider } from "@/lib/providers/llm";
-import type { AnalyzeJobData, Speaker, TranscriptSegment, TextOutputType } from "@/types";
+import type { AnalyzeJobData, Speaker, TranscriptSegment, TextOutputType, WordTimestamp } from "@/types";
 
 const TEXT_ONLY_SOURCES = ["article_url", "pdf_upload"];
 
@@ -181,22 +182,73 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
       textsGenerated: textResults.length,
     });
 
-    // For text-only sources: mark complete. For video/audio: would go to rendering (Phase 2).
-    // In Phase 1 (no render worker), mark all jobs as complete after analyze.
-    await updateJobStatus(jobId, "complete");
+    if (isTextOnly) {
+      // Text-only sources have no clips to render — mark complete immediately
+      await updateJobStatus(jobId, "complete");
 
-    // Fire webhook
-    const clipCount = isTextOnly
-      ? 0
-      : await prisma.clip.count({ where: { jobId } });
-    await fireJobCompletedWebhook(jobId, {
-      status: "complete",
-      clipCount,
-      textOutputCount: textResults.length,
-      sourceTitle: job.sourceTitle,
-    }).catch((err) => {
-      console.warn(`[analyze] Webhook dispatch failed for job ${jobId}:`, err);
-    });
+      await fireJobCompletedWebhook(jobId, {
+        status: "complete",
+        clipCount: 0,
+        textOutputCount: textResults.length,
+        sourceTitle: job.sourceTitle,
+      }).catch((err) => {
+        console.warn(`[analyze] Webhook dispatch failed for job ${jobId}:`, err);
+      });
+    } else {
+      // Video/audio sources: fan out render jobs for each clip
+
+      // Load word timestamps from transcript for caption rendering
+      const transcript = await prisma.transcript.findUnique({
+        where: { jobId },
+        select: { wordTimestamps: true },
+      });
+      const allWordTimestamps = (transcript?.wordTimestamps ?? []) as unknown as WordTimestamp[];
+
+      // Build speaker color map (host = indigo, guest = cyan)
+      const speakerColorMap: Record<string, string> = {};
+      for (const speaker of speakers) {
+        speakerColorMap[speaker.id] =
+          speaker.role === "host" || speaker.role === "solo"
+            ? "&H004646E5" // Indigo (ASS BGR format)
+            : "&H00FFFF00"; // Cyan
+      }
+
+      // Enqueue one render job per clip
+      const createdClips = await prisma.clip.findMany({
+        where: { jobId },
+        select: { id: true, startTime: true, endTime: true, captionStyle: true },
+      });
+
+      await updateJobStatus(jobId, "rendering");
+      await updateJobProgress(jobId, "render", "running", {
+        clips_rendered: 0,
+        clips_total: createdClips.length,
+      });
+
+      for (const clip of createdClips) {
+        await renderQueue().add(
+          "render",
+          {
+            jobId,
+            clipId: clip.id,
+            sourceFileKey: job.sourceFileKey!,
+            startTime: clip.startTime,
+            endTime: clip.endTime,
+            aspectRatios: ["9x16", "1x1", "16x9"],
+            captionStyle: clip.captionStyle ?? "karaoke",
+            wordTimestamps: allWordTimestamps,
+            speakerColors: speakerColorMap,
+          },
+          {
+            jobId: `render-${clip.id}`, // Deterministic ID for dedup
+          },
+        );
+      }
+
+      console.log(
+        `[analyze] Enqueued ${createdClips.length} render jobs for job ${jobId}`,
+      );
+    }
   } catch (error) {
     await updateJobProgress(jobId, "analyze", "error").catch(() => {});
     await updateJobStatus(
