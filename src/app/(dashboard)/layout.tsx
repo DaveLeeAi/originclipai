@@ -19,7 +19,7 @@ export default async function DashboardLayout({
   }
 
   // Fetch profile for sidebar meter and onboarding state
-  const profile = await db.profile.findUnique({
+  let profile = await db.profile.findUnique({
     where: { id: user.id },
     select: {
       plan: true,
@@ -29,6 +29,29 @@ export default async function DashboardLayout({
       displayName: true,
     },
   });
+
+  if (!profile) {
+    profile = await db.profile.create({
+      data: {
+        id: user.id,
+        email: user.email!,
+        displayName: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+        avatarUrl: user.user_metadata?.avatar_url ?? null,
+        plan: 'free',
+        minutesLimit: 30,
+        minutesUsedThisCycle: 0,
+        billingCycleStart: new Date(),
+        onboardingComplete: false,
+      },
+      select: {
+        plan: true,
+        minutesUsedThisCycle: true,
+        minutesLimit: true,
+        onboardingComplete: true,
+        displayName: true,
+      },
+    });
+  }
 
   const showOnboarding = !profile?.onboardingComplete;
 
