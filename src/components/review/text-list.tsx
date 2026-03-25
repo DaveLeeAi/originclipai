@@ -90,7 +90,17 @@ export function TextList({ items, selectedId, onSelect }: TextListProps) {
   if (items.length === 0) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
-        <p className="text-sm text-[#a09e96]">No text outputs generated</p>
+        <div className="max-w-xs">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e4e2dd] bg-[#f6f5f2]">
+            <svg className="text-[#a09e96]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>
+            </svg>
+          </div>
+          <p className="mb-1 text-sm font-semibold text-[#1a1a1a]">No text outputs yet</p>
+          <p className="text-xs text-[#a09e96]">
+            Text outputs like LinkedIn posts, X threads, and summaries will appear here once analysis completes.
+          </p>
+        </div>
       </div>
     );
   }

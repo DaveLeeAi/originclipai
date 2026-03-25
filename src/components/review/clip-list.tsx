@@ -39,13 +39,16 @@ export function ClipList({ clips, selectedId, onSelect }: ClipListProps) {
   if (clips.length === 0) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
-        <div>
-          <div className="mb-2 text-[#a09e96]">
-            <svg className="mx-auto" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+        <div className="max-w-xs">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e4e2dd] bg-[#f6f5f2]">
+            <svg className="text-[#a09e96]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/>
             </svg>
           </div>
-          <p className="text-sm text-[#a09e96]">No clips generated</p>
+          <p className="mb-1 text-sm font-semibold text-[#1a1a1a]">No clips generated</p>
+          <p className="text-xs text-[#a09e96]">
+            Article and text inputs produce text outputs only. Upload a video or audio file to generate clip candidates.
+          </p>
         </div>
       </div>
     );

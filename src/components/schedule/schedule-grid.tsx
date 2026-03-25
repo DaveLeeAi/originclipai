@@ -32,12 +32,16 @@ export function ScheduleGrid({ items, onSetTime, onCancel }: ScheduleGridProps) 
   if (items.length === 0) {
     return (
       <div className="flex h-[400px] items-center justify-center">
-        <div className="text-center">
-          <svg className="mx-auto mb-3 text-[#a09e96] opacity-40" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-          <p className="mb-1 text-sm font-medium text-[#6b6960]">Nothing scheduled yet</p>
-          <p className="text-xs text-[#a09e96]">Approve clips and text outputs in the Review tab first</p>
+        <div className="max-w-xs text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e4e2dd] bg-[#f6f5f2]">
+            <svg className="text-[#a09e96]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <p className="mb-1 text-sm font-semibold text-[#1a1a1a]">Nothing scheduled yet</p>
+          <p className="text-xs text-[#a09e96]">
+            Process a video or article first, then approve clips and text outputs in the review queue to schedule them.
+          </p>
         </div>
       </div>
     );
