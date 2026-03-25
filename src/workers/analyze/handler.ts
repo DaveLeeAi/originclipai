@@ -209,6 +209,18 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
     const summaryEnabled = genOpts.summary;
     const textEnabled = genOpts.linkedin || genOpts.xThread || genOpts.newsletter || genOpts.chapterMarkers;
 
+    // Track text generation progress
+    let textsGenerated = 0;
+    const textsTotal =
+      (insightsEnabled ? 1 : 0) +
+      (summaryEnabled ? 1 : 0) +
+      (genOpts.linkedin ? 1 : 0) +
+      (genOpts.xThread ? 1 : 0) +
+      (genOpts.newsletter ? 1 : 0) +
+      (genOpts.chapterMarkers && !isTextOnly && durationSeconds > 0 ? 1 : 0);
+
+    const textErrors: { type: string; error: string }[] = [];
+
     const parallelTasks: [
       Promise<Awaited<ReturnType<typeof extractInsightsAndQuotes>> | null>,
       Promise<Awaited<ReturnType<typeof generateTranscriptSummary>> | null>,
@@ -223,8 +235,17 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
             speakers,
             maxInsights: genOpts.insights ? 10 : 0,
             maxQuotes: genOpts.quotes ? 8 : 0,
-          }).then((r) => { llmCallCount++; return r; }).catch((err) => {
-            console.warn(`[analyze] Insight/quote extraction failed for job ${jobId}:`, err);
+          }).then((r) => {
+            llmCallCount++;
+            textsGenerated++;
+            updateJobProgress(jobId, "analyze", "running", { substep: "text_generation", textsGenerated, textsTotal }).catch(() => {});
+            return r;
+          }).catch((err) => {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            console.error(`[analyze] Insight/quote extraction failed for job ${jobId}:`, errMsg, err);
+            textErrors.push({ type: "insights_quotes", error: errMsg });
+            textsGenerated++;
+            updateJobProgress(jobId, "analyze", "running", { substep: "text_generation", textsGenerated, textsTotal }).catch(() => {});
             return null;
           })
         : Promise.resolve(null),
@@ -236,13 +257,22 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
             sourceType,
             chunks,
             speakers,
-          }).then((r) => { llmCallCount++; return r; }).catch((err) => {
-            console.warn(`[analyze] Summary generation failed for job ${jobId}:`, err);
+          }).then((r) => {
+            llmCallCount++;
+            textsGenerated++;
+            updateJobProgress(jobId, "analyze", "running", { substep: "text_generation", textsGenerated, textsTotal }).catch(() => {});
+            return r;
+          }).catch((err) => {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            console.error(`[analyze] Summary generation failed for job ${jobId}:`, errMsg, err);
+            textErrors.push({ type: "summary", error: errMsg });
+            textsGenerated++;
+            updateJobProgress(jobId, "analyze", "running", { substep: "text_generation", textsGenerated, textsTotal }).catch(() => {});
             return null;
           })
         : Promise.resolve(null),
 
-      // Platform text outputs (filtered by genOpts inside)
+      // Platform text outputs (filtered by genOpts inside) — each output fails independently inside
       textEnabled
         ? generateAllTextOutputs(llm, {
             sourceTitle: job.sourceTitle ?? "Untitled",
@@ -252,7 +282,11 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
             isTextOnly,
             durationSeconds,
             transcript: fullText,
-          }, genOpts)
+          }, genOpts, (count, errors) => {
+            textsGenerated += count;
+            textErrors.push(...errors);
+            updateJobProgress(jobId, "analyze", "running", { substep: "text_generation", textsGenerated, textsTotal }).catch(() => {});
+          })
         : Promise.resolve([]),
     ];
 
@@ -455,6 +489,7 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
       insightsExtracted: insightCount,
       quotesExtracted: quoteCount,
       customTemplatesRun: customOutputCount,
+      ...(textErrors.length > 0 ? { textErrors } : {}),
     });
 
     if (isTextOnly) {
@@ -621,6 +656,7 @@ async function generateAllTextOutputs(
   llm: LLMProvider,
   input: TextGenerationInput,
   genOpts?: GenerationOptions,
+  onProgress?: (completedCount: number, errors: { type: string; error: string }[]) => void,
 ): Promise<TextOutputRecord[]> {
   const results: TextOutputRecord[] = [];
   const opts = genOpts ?? {
@@ -628,37 +664,57 @@ async function generateAllTextOutputs(
     summary: true, insights: true, quotes: true, chapterMarkers: true, customTemplates: true,
   };
 
-  const tasks: Promise<TextOutputRecord[]>[] = [];
+  interface LabeledTask {
+    type: string;
+    promise: Promise<TextOutputRecord[]>;
+  }
+
+  const tasks: LabeledTask[] = [];
 
   if (opts.linkedin) {
-    tasks.push(generateLinkedinPosts(llm, input));
+    tasks.push({ type: "linkedin", promise: generateLinkedinPosts(llm, input) });
   }
   if (opts.xThread) {
-    tasks.push(generateXThreads(llm, input));
+    tasks.push({ type: "x_thread", promise: generateXThreads(llm, input) });
   }
   if (opts.newsletter) {
-    tasks.push(generateNewsletterSections(llm, input));
+    tasks.push({ type: "newsletter", promise: generateNewsletterSections(llm, input) });
   }
 
   // Chapter markers only for video/audio with timestamps
   if (opts.chapterMarkers && !input.isTextOnly && input.durationSeconds > 0) {
-    tasks.push(generateChapterMarkers(llm, input));
+    tasks.push({ type: "chapter_markers", promise: generateChapterMarkers(llm, input) });
   }
 
   if (tasks.length === 0) return results;
 
-  const settled = await Promise.allSettled(tasks);
+  const settled = await Promise.allSettled(tasks.map((t) => t.promise));
 
-  for (const result of settled) {
+  let completedCount = 0;
+  const errors: { type: string; error: string }[] = [];
+
+  for (let i = 0; i < settled.length; i++) {
+    const result = settled[i];
+    const taskType = tasks[i].type;
+    completedCount++;
+
     try {
       if (result.status === "fulfilled" && Array.isArray(result.value)) {
         results.push(...result.value);
       } else if (result.status === "rejected") {
-        console.warn("[analyze] Text generation task failed:", String(result.reason));
+        const errMsg = result.reason instanceof Error ? result.reason.message : String(result.reason);
+        console.error(`[analyze] Text generation failed for ${taskType}:`, errMsg, result.reason);
+        errors.push({ type: taskType, error: errMsg });
       }
     } catch (iterErr) {
-      console.warn("[analyze] Error processing text generation result:", iterErr);
+      const errMsg = iterErr instanceof Error ? iterErr.message : String(iterErr);
+      console.error(`[analyze] Error processing text generation result for ${taskType}:`, errMsg, iterErr);
+      errors.push({ type: taskType, error: errMsg });
     }
+  }
+
+  if (onProgress) {
+    onProgress(completedCount, errors);
   }
 
   return results;

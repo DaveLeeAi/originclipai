@@ -12,7 +12,7 @@ import { z } from "zod";
 import type { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from "./llm";
 import { cleanLLMResponse } from "@/lib/llm/response-cleaner";
 
-const DEFAULT_MODEL = "gemini-2.0-flash";
+const DEFAULT_MODEL = "gemini-2.5-flash-preview-05-20";
 
 /**
  * Google Gemini Flash LLM provider.
@@ -32,7 +32,8 @@ export class GeminiLLMProvider implements LLMProvider {
   }
 
   async chat(messages: LLMMessage[], options?: LLMOptions): Promise<LLMResponse> {
-    const model = options?.model ?? DEFAULT_MODEL;
+    // Ignore non-Gemini model names (e.g. "claude-sonnet-4-20250514" from prompt templates)
+    const model = options?.model?.startsWith("gemini") ? options.model : DEFAULT_MODEL;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
 
     // Convert messages to Gemini format
@@ -61,18 +62,38 @@ export class GeminiLLMProvider implements LLMProvider {
       body.systemInstruction = systemInstruction;
     }
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    // 60-second timeout for Gemini free tier
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60_000);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeout);
+      if (fetchErr instanceof DOMException && fetchErr.name === "AbortError") {
+        throw new Error(`[GEMINI] Request timed out after 60s for model ${model}`);
+      }
+      throw fetchErr;
+    } finally {
+      clearTimeout(timeout);
     }
 
-    const data = await response.json() as {
+    const responseText = await response.text();
+    console.log(
+      `[GEMINI] ${model} — status: ${response.status}, body preview: ${responseText.slice(0, 200)}`,
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error (${response.status}): ${responseText}`);
+    }
+
+    const data = JSON.parse(responseText) as {
       candidates?: Array<{
         content?: { parts?: Array<{ text?: string }> };
       }>;
@@ -87,7 +108,7 @@ export class GeminiLLMProvider implements LLMProvider {
     const outputTokens = data.usageMetadata?.candidatesTokenCount ?? 0;
 
     console.log(
-      `[llm] gemini/${model} — input: ${inputTokens}, output: ${outputTokens}`,
+      `[GEMINI] ${model} — input: ${inputTokens}, output: ${outputTokens}`,
     );
 
     return {
