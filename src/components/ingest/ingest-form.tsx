@@ -1,7 +1,7 @@
 // src/components/ingest/ingest-form.tsx
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -12,6 +12,15 @@ const YOUTUBE_PATTERNS = [
 ];
 
 const VIDEO_EXTENSIONS = /\.(mp4|webm|mov)(\?|$)/i;
+
+type InputMode = 'youtube' | 'article' | 'video' | 'audio';
+
+const INPUT_MODE_PLACEHOLDERS: Record<InputMode, string> = {
+  youtube: 'Paste a YouTube URL...',
+  article: 'Paste an article or blog URL...',
+  video: '',
+  audio: '',
+};
 
 function detectSourceType(url: string): { sourceType: string; sourceUrl: string } {
   if (YOUTUBE_PATTERNS.some((p) => p.test(url))) {
@@ -28,7 +37,10 @@ export function IngestForm() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [activeMode, setActiveMode] = useState<InputMode | null>(null);
   const router = useRouter();
+  const urlInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async () => {
     if (!url.trim()) return;
@@ -112,6 +124,28 @@ export function IngestForm() {
     if (file) handleFileUpload(file);
   };
 
+  const handleCardClick = (mode: InputMode): void => {
+    setActiveMode(mode);
+    setError(null);
+
+    if (mode === 'youtube' || mode === 'article') {
+      // Focus the URL input and update placeholder
+      setTimeout(() => urlInputRef.current?.focus(), 0);
+    } else if (mode === 'video') {
+      // Trigger file picker for video
+      if (fileInputRef.current) {
+        fileInputRef.current.accept = 'video/mp4,video/quicktime,video/webm';
+        fileInputRef.current.click();
+      }
+    } else if (mode === 'audio') {
+      // Trigger file picker for audio
+      if (fileInputRef.current) {
+        fileInputRef.current.accept = 'audio/mpeg,audio/wav,audio/mp4';
+        fileInputRef.current.click();
+      }
+    }
+  };
+
   return (
     <div className="flex flex-1 items-center justify-center p-10">
       <div className="w-full max-w-[640px]">
@@ -131,11 +165,14 @@ export function IngestForm() {
             </svg>
           </div>
           <input
+            ref={urlInputRef}
             type="url"
             value={url}
             onChange={(e) => { setUrl(e.target.value); setError(null); }}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            placeholder="Paste YouTube URL, article URL, or any public link..."
+            placeholder={activeMode && (activeMode === 'youtube' || activeMode === 'article')
+              ? INPUT_MODE_PLACEHOLDERS[activeMode]
+              : 'Paste YouTube URL, article URL, or any public link...'}
             className="flex-1 bg-transparent py-2.5 text-[15px] outline-none placeholder:text-[#a09e96]"
             disabled={isProcessing}
           />
@@ -156,15 +193,20 @@ export function IngestForm() {
 
         {/* Source type cards */}
         <div className="mb-6 grid grid-cols-4 gap-3">
-          {[
-            { label: 'YouTube URL', desc: 'Any public video', color: '#dc2626' },
-            { label: 'PDF / Article', desc: 'Blog, whitepaper', color: '#5046e5' },
-            { label: 'Upload MP4', desc: 'Local video file', color: '#7c3aed' },
-            { label: 'Audio File', desc: 'MP3, WAV, M4A', color: '#0891b2' },
-          ].map((src) => (
+          {([
+            { label: 'YouTube URL', desc: 'Any public video', color: '#dc2626', mode: 'youtube' as InputMode },
+            { label: 'PDF / Article', desc: 'Blog, whitepaper', color: '#5046e5', mode: 'article' as InputMode },
+            { label: 'Upload MP4', desc: 'Local video file', color: '#7c3aed', mode: 'video' as InputMode },
+            { label: 'Audio File', desc: 'MP3, WAV, M4A', color: '#0891b2', mode: 'audio' as InputMode },
+          ]).map((src) => (
             <div
               key={src.label}
-              className="cursor-pointer rounded-xl border border-[#e4e2dd] bg-white p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#5046e5] hover:shadow-md"
+              onClick={() => handleCardClick(src.mode)}
+              className={`cursor-pointer rounded-xl border bg-white p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                activeMode === src.mode
+                  ? 'border-[#5046e5] ring-1 ring-[#5046e5]/30 shadow-md'
+                  : 'border-[#e4e2dd] hover:border-[#5046e5]'
+              }`}
             >
               <div className="mb-2 text-xs font-bold" style={{ color: src.color }}>
                 ●
@@ -174,6 +216,15 @@ export function IngestForm() {
             </div>
           ))}
         </div>
+
+        {/* Hidden file input for card-triggered uploads */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          onChange={handleFileSelect}
+          disabled={isProcessing}
+        />
 
         {/* Drop zone */}
         <div
