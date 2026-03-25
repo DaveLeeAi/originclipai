@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getUsageStatus } from '@/lib/billing';
-import { getSessionUserId } from '@/lib/auth';
+import { getUser } from '@/lib/auth/server';
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const userId = await getSessionUserId();
-    if (!userId) {
+    const user = await getUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const userId = user.id;
 
     const usage = await getUsageStatus(userId);
     return NextResponse.json(usage);

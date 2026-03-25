@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
-import { getSessionUserId } from "@/lib/auth";
+import { getUser } from "@/lib/auth/server";
 import { scheduleQueue } from "@/lib/queue/queues";
 import { z } from "zod";
 import type { Platform } from "@/types";
@@ -21,10 +21,11 @@ const createScheduleSchema = z
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    const userId = await getSessionUserId();
-    if (!userId) {
+    const user = await getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = user.id;
 
     const body: unknown = await request.json();
     const input = createScheduleSchema.parse(body);
@@ -183,10 +184,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const userId = await getSessionUserId();
-    if (!userId) {
+    const user = await getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = user.id;
 
     const posts = await prisma.scheduledPost.findMany({
       where: { userId },

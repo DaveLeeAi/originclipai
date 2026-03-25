@@ -1,3 +1,9 @@
+/**
+ * @deprecated This module uses cookie-based auth that Supabase Auth never sets.
+ * Use `@/lib/auth/server` (getUser / requireUser) instead.
+ * This file is retained only for reference and should be removed once confirmed unused.
+ */
+
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/client';
 

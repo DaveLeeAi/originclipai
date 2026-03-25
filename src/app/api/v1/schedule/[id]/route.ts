@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
-import { getSessionUserId } from "@/lib/auth";
+import { getUser } from "@/lib/auth/server";
 import { scheduleQueue } from "@/lib/queue/queues";
 import { z } from "zod";
 
@@ -15,10 +15,11 @@ export async function PATCH(
 ): Promise<NextResponse> {
   try {
     const { id } = await params;
-    const userId = await getSessionUserId();
-    if (!userId) {
+    const user = await getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = user.id;
 
     const post = await prisma.scheduledPost.findUnique({
       where: { id },
@@ -133,10 +134,11 @@ export async function DELETE(
 ): Promise<NextResponse> {
   try {
     const { id } = await params;
-    const userId = await getSessionUserId();
-    if (!userId) {
+    const user = await getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = user.id;
 
     const post = await prisma.scheduledPost.findUnique({
       where: { id },
