@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Badge, StatusDot } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 import { formatDuration, timeAgo } from '@/lib/utils';
 
 export interface JobSummary {
@@ -340,6 +341,7 @@ export function JobsList({ jobs }: JobsListProps) {
   const [cancellingIds, setCancellingIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const router = useRouter();
+  const { showToast } = useToast();
 
   const toggleSelected = useCallback((e: React.MouseEvent, jobId: string) => {
     e.preventDefault();
@@ -442,7 +444,10 @@ export function JobsList({ jobs }: JobsListProps) {
       return next;
     });
     if (success) {
+      showToast('Job cancelled');
       router.refresh();
+    } else {
+      showToast('Failed to cancel job', 'error');
     }
   }
 
@@ -462,8 +467,10 @@ export function JobsList({ jobs }: JobsListProps) {
         next.delete(job.id);
         return next;
       });
+      showToast('Job deleted');
       router.refresh();
     } else {
+      showToast('Failed to delete job', 'error');
       setDeletingIds((prev) => {
         const next = new Set(prev);
         next.delete(job.id);
@@ -492,6 +499,7 @@ export function JobsList({ jobs }: JobsListProps) {
       return next;
     });
 
+    showToast(`${count} failed job${count === 1 ? '' : 's'} deleted`);
     router.refresh();
   }
 
@@ -511,6 +519,7 @@ export function JobsList({ jobs }: JobsListProps) {
     await Promise.all(ids.map((id) => deleteJob(id)));
 
     setSelectedIds(new Set());
+    showToast(`${ids.length} job${ids.length === 1 ? '' : 's'} deleted`);
     router.refresh();
   }
 
