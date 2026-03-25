@@ -47,11 +47,25 @@ Workers are independent Node.js processes. Each worker consumes from one BullMQ 
 - **Onboarding:** First-run onboarding flow with persistence
 - **Auth:** Supabase Auth with sign-in/sign-up, middleware-based session refresh, protected routes
 
+### Recent Changes (Sprint 1-2)
+
+**Pipeline Reliability:**
+- Per-output error isolation in analyze handler — individual LLM calls fail independently without killing the job
+- Warnings array on partial failures, job only marked failed if ALL LLM calls fail
+- Gemini provider hardened with 429 rate-limit retry (5s backoff) and request/response logging
+
+**UI Essentials:**
+- Toast notification system with success/error/warning/undo types (`toast.success()`, `toast.undo()`)
+- Confirmation dialog component replacing all `window.confirm()` calls — destructive variant with red button, auto-focused cancel
+- Reusable dropdown menu component (trigger, content, items, separator)
+- All destructive actions (delete, cancel, bulk delete) now use proper confirm dialogs
+- Empty states with icons and explanatory text for clips tab, text outputs tab, and schedule page
+
 ### What's Not Yet Tested End-to-End
 
-The vertical slice (YouTube URL → clips + text in review queue) has not been tested with real environment variables. All pieces are built and the build is clean, but the pipeline has not been exercised against real APIs (AssemblyAI, Claude, Supabase Storage, Redis/BullMQ).
+The vertical slice (article URL → text outputs in review queue) works with Gemini Flash. YouTube URL ingestion requires yt-dlp + FFmpeg installed. Video rendering is intentionally skipped for the vertical slice.
 
-**To test:** Set up real environment variables (see below), run `npm run dev` + `npm run workers:dev`, paste a YouTube URL, and watch it flow.
+**To test:** Set up real environment variables (see below), run `npm run dev` + `npm run workers:dev`, paste an article URL, and watch text outputs appear in the review queue.
 
 ## Getting Started
 
@@ -178,7 +192,7 @@ Set `LLM_PROVIDER_MODE` in `.env.local`:
 | Mode | Provider | Cost | Use Case |
 |------|----------|------|----------|
 | `mock` | Fixture data | Free | UI development, CI |
-| `gemini-dev` | Google Gemini Flash | Free tier (15 RPM) | Feature testing, integration |
+| `gemini-dev` | Gemini 3.1 Flash | ~$0.075/M input | Feature testing, integration |
 | `anthropic-prod` | Claude Sonnet | ~$3/1K jobs | Production |
 
 ### Generation Toggles
