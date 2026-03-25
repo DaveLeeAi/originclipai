@@ -59,8 +59,12 @@ export async function middleware(request: NextRequest) {
   // Check if the route requires auth
   const isProtectedRoute =
     !request.nextUrl.pathname.startsWith('/sign-') &&
+    !request.nextUrl.pathname.startsWith('/callback') &&
+    !request.nextUrl.pathname.startsWith('/forgot-password') &&
+    !request.nextUrl.pathname.startsWith('/reset-password') &&
     !request.nextUrl.pathname.startsWith('/api/webhooks') &&
     !request.nextUrl.pathname.startsWith('/api/v1/openapi') &&
+    !request.nextUrl.pathname.startsWith('/api/auth/') &&
     !request.nextUrl.pathname.startsWith('/compare') &&
     !request.nextUrl.pathname.startsWith('/blog') &&
     !request.nextUrl.pathname.startsWith('/pricing') &&

@@ -4,6 +4,7 @@ import { transcribeQueue } from "@/lib/queue/queues";
 import { getStorageProvider } from "@/lib/providers/storage-supabase";
 import type { IngestJobData, SourceType } from "@/types";
 import { requireBinary, BinaryNotFoundError } from "@/lib/utils/binary-check";
+import { extract } from "@extractus/article-extractor";
 import { exec } from "child_process";
 import { promisify } from "util";
 import * as fs from "fs/promises";
@@ -284,22 +285,55 @@ async function extractArticle(
   jobId: string,
   url: string,
 ): Promise<IngestResult> {
-  // Fetch article content via simple HTTP — no Puppeteer in v1 for simplicity
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new PermanentError(`Failed to fetch article: HTTP ${response.status}`);
+  let title: string;
+  let textContent: string;
+
+  // Primary: use @extractus/article-extractor (handles JS-rendered pages, paywalls, etc.)
+  try {
+    const article = await extract(url);
+    if (article && article.content) {
+      // article.content is HTML — strip tags for plain text
+      textContent = article.content
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      title = article.title ?? new URL(url).hostname;
+      console.log(`[ingest] Article extracted via @extractus: "${title}" (${textContent.length} chars)`);
+    } else {
+      throw new Error("Article extractor returned empty content");
+    }
+  } catch (extractError) {
+    console.warn(`[ingest] @extractus failed for ${url}, falling back to basic fetch:`, extractError instanceof Error ? extractError.message : extractError);
+
+    // Fallback: basic HTTP fetch + HTML parsing
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new PermanentError(`Failed to fetch article: HTTP ${response.status}`);
+    }
+    const html = await response.text();
+    textContent = extractTextFromHtml(html);
+    title = extractTitleFromHtml(html) ?? new URL(url).hostname;
+    console.log(`[ingest] Article extracted via fallback: "${title}" (${textContent.length} chars)`);
   }
 
-  const html = await response.text();
-
-  // Basic article text extraction: strip tags, get meaningful content
-  const textContent = extractTextFromHtml(html);
-  const title = extractTitleFromHtml(html) ?? new URL(url).hostname;
+  // Validate we got meaningful content
+  if (textContent.length < 100) {
+    throw new PermanentError(
+      `Article extraction failed: only ${textContent.length} characters extracted. ` +
+      `The article may be behind a paywall or require JavaScript rendering.`
+    );
+  }
 
   const contentJson = JSON.stringify({
     title,
     url,
-    content: textContent,
+    content: textContent.slice(0, 500_000),
     fetchedAt: new Date().toISOString(),
   });
 

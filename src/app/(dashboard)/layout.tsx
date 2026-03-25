@@ -59,6 +59,9 @@ export default async function DashboardLayout({
       minutesUsed={profile?.minutesUsedThisCycle ?? 0}
       minutesLimit={profile?.minutesLimit ?? 30}
       plan={profile?.plan ?? 'Free'}
+      userEmail={user.email ?? undefined}
+      userName={profile?.displayName ?? undefined}
+      userAvatarUrl={user.user_metadata?.avatar_url ?? null}
     >
       {showOnboarding && (
         <OnboardingWrapper userName={profile?.displayName ?? undefined} />

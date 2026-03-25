@@ -10,6 +10,9 @@ interface AppShellProps {
   minutesUsed?: number;
   minutesLimit?: number;
   plan?: string;
+  userEmail?: string;
+  userName?: string;
+  userAvatarUrl?: string | null;
 }
 
 // Lucide-style inline SVG icons
@@ -50,7 +53,7 @@ const SETTINGS_ITEMS = [
   { href: '/templates', label: 'Templates', icon: icons.fileText },
 ];
 
-export function AppShell({ children, minutesUsed = 0, minutesLimit = 30, plan = 'Free' }: AppShellProps) {
+export function AppShell({ children, minutesUsed = 0, minutesLimit = 30, plan = 'Free', userEmail, userName, userAvatarUrl }: AppShellProps) {
   const pathname = usePathname();
   const usagePct = minutesLimit > 0 ? Math.min(100, Math.round((minutesUsed / minutesLimit) * 100)) : 0;
 
@@ -161,9 +164,20 @@ export function AppShell({ children, minutesUsed = 0, minutesLimit = 30, plan = 
         {/* TOP BAR */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#e4e2dd] bg-white/85 px-6 backdrop-blur-xl">
           <div />
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#5046e5] to-[#7c3aed] shadow-sm" />
-          </div>
+          <Link href="/settings" className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-[#f6f5f2]">
+            {userEmail && (
+              <span className="text-xs text-[#6b6960]">{userName || userEmail}</span>
+            )}
+            {userAvatarUrl ? (
+              <img src={userAvatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#5046e5] to-[#7c3aed] shadow-sm">
+                <span className="text-xs font-bold text-white">
+                  {(userName?.[0] || userEmail?.[0] || 'U').toUpperCase()}
+                </span>
+              </div>
+            )}
+          </Link>
         </header>
 
         {/* PAGE CONTENT */}
