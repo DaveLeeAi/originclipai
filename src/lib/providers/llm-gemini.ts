@@ -1,7 +1,7 @@
 // src/lib/providers/llm-gemini.ts
 //
 // Gemini Flash LLM provider for cheap development/iteration.
-// Uses Google's Gemini 3.1 Flash — significantly cheaper than Claude Sonnet.
+// Uses Google's Gemini 2.5 Flash — significantly cheaper than Claude Sonnet.
 // Activated via providerMode: "gemini-dev" on job creation or LLM_PROVIDER_MODE=gemini-dev env.
 //
 // Cost comparison (approximate):
@@ -12,7 +12,7 @@ import { z } from "zod";
 import type { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from "./llm";
 import { cleanLLMResponse } from "@/lib/llm/response-cleaner";
 
-const DEFAULT_MODEL = "gemini-3.1-flash";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
 /**
  * Google Gemini Flash LLM provider.

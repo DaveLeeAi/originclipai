@@ -13,8 +13,7 @@ import { cookies } from 'next/headers';
  *   DEV_USER_ID=00000000-0000-0000-0000-000000000001
  *   DEV_USER_EMAIL=dev@localhost
  */
-const DEV_BYPASS_ENABLED =
-  process.env.DEV_AUTH_BYPASS === 'true' && process.env.NODE_ENV !== 'production';
+const DEV_BYPASS_ENABLED = process.env.DEV_AUTH_BYPASS === 'true';
 
 const DEV_USER = DEV_BYPASS_ENABLED
   ? {

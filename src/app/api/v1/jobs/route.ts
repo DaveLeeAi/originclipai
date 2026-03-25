@@ -7,6 +7,7 @@ import { generateContentHash } from "@/lib/cost/content-hash";
 import { estimateJobCost } from "@/lib/cost/estimator";
 import { checkJobGuardrails } from "@/lib/cost/guardrails";
 import type { JobProgress } from "@/types";
+import { resolveProviderMode } from "@/lib/dev-mode";
 
 /**
  * POST /api/v1/jobs — Create a new processing job.
@@ -46,7 +47,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       ...input.generationOptions,
     };
 
-    const providerMode = input.providerMode ?? "anthropic-prod";
+    const providerMode = resolveProviderMode(input.providerMode ?? undefined);
 
     // Check guardrails before creating job
     const guardrailResult = await checkJobGuardrails(userId, {

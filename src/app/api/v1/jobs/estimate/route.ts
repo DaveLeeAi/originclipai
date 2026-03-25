@@ -3,6 +3,7 @@ import { costEstimateSchema } from "@/lib/utils/validation";
 import { estimateJobCost } from "@/lib/cost/estimator";
 import { getUserUsageStats } from "@/lib/cost/guardrails";
 import { getUser } from "@/lib/auth/server";
+import { resolveProviderMode } from "@/lib/dev-mode";
 
 /**
  * POST /api/v1/jobs/estimate — Get cost estimate before submitting a job.
@@ -32,7 +33,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({
       estimate,
       usage,
-      providerMode: input.providerMode ?? "anthropic-prod",
+      providerMode: resolveProviderMode(input.providerMode ?? undefined),
     });
   } catch (error) {
     if (error instanceof Error && error.name === "ZodError") {

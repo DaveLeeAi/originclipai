@@ -12,16 +12,14 @@ import { NextResponse, type NextRequest } from 'next/server';
  */
 export async function middleware(request: NextRequest) {
   // Dev auth bypass — skip all Supabase auth in development
-  const devBypass =
-    process.env.DEV_AUTH_BYPASS === 'true' && process.env.NODE_ENV !== 'production';
+  const devBypass = process.env.DEV_AUTH_BYPASS === 'true';
 
   if (devBypass) {
-    // Authenticated user assumed — redirect root to /jobs, skip auth pages
+    // Let the landing page at / render normally
     if (request.nextUrl.pathname === '/') {
-      const url = request.nextUrl.clone();
-      url.pathname = '/jobs';
-      return NextResponse.redirect(url);
+      return NextResponse.next({ request });
     }
+    // Skip auth pages — redirect to dashboard
     if (request.nextUrl.pathname === '/sign-in' || request.nextUrl.pathname === '/sign-up') {
       const redirect = request.nextUrl.searchParams.get('redirect') ?? '/jobs';
       const url = request.nextUrl.clone();
