@@ -478,6 +478,37 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
     // Track LLM call count for cost guardrails
     await incrementLLMCallCount(jobId, llmCallCount).catch(() => {});
 
+    // Build warnings array from any partial failures
+    const warnings: string[] = textErrors.map(
+      (e) => `${e.type} generation failed: ${e.error}`,
+    );
+    if (insightsEnabled && !insightsResult) {
+      warnings.push("Insights/quotes extraction failed");
+    }
+    if (summaryEnabled && !summaryResult) {
+      warnings.push("Summary generation failed");
+    }
+
+    // Determine if ALL LLM calls failed — if so, mark job as failed
+    const allCallsFailed =
+      totalTextOutputs === 0 &&
+      (isTextOnly || (await prisma.clip.count({ where: { jobId } })) === 0);
+
+    if (allCallsFailed && textsTotal > 0) {
+      const errorMsg = `All LLM calls failed: ${warnings.join("; ") || "unknown errors"}`;
+      console.error(`[analyze] ${errorMsg} for job ${jobId}`);
+      await prisma.job.update({
+        where: { id: jobId },
+        data: { textOutputCount: 0 },
+      });
+      await updateJobProgress(jobId, "analyze", "error", {
+        textErrors,
+        warnings,
+      });
+      await updateJobStatus(jobId, "failed", errorMsg);
+      return;
+    }
+
     await prisma.job.update({
       where: { id: jobId },
       data: { textOutputCount: totalTextOutputs },
@@ -490,6 +521,7 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
       quotesExtracted: quoteCount,
       customTemplatesRun: customOutputCount,
       ...(textErrors.length > 0 ? { textErrors } : {}),
+      ...(warnings.length > 0 ? { warnings } : {}),
     });
 
     if (isTextOnly) {
