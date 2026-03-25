@@ -74,6 +74,16 @@ export function BillingManager({
 
   return (
     <div>
+      {/* Coming soon banner */}
+      <div className="mb-6 rounded-xl border border-[#5046e5]/20 bg-[#5046e5]/[0.04] px-4 py-3">
+        <p className="text-sm font-medium text-[#5046e5]">
+          Billing integration coming soon
+        </p>
+        <p className="mt-0.5 text-xs text-[#6b6960]">
+          You&apos;re currently on the Free plan with 30 minutes/month. Paid plans and Stripe checkout will be available at launch.
+        </p>
+      </div>
+
       {/* Current usage */}
       <Card className="mb-6 p-5">
         <div className="mb-3 flex items-center justify-between">
@@ -144,8 +154,8 @@ export function BillingManager({
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="w-full"
-                  onClick={onManageBilling}
+                  className="w-full opacity-60"
+                  disabled
                 >
                   Manage billing
                 </Button>
@@ -153,31 +163,16 @@ export function BillingManager({
                 <Button
                   variant={isDowngrade ? 'ghost' : 'primary'}
                   size="sm"
-                  className="w-full"
-                  onClick={() => onUpgrade(plan.key)}
+                  className="w-full opacity-60"
+                  disabled
                 >
-                  {isDowngrade ? 'Downgrade' : plan.key === 'free' ? 'Downgrade' : 'Upgrade'}
+                  {isDowngrade ? 'Coming soon' : plan.key === 'free' ? 'Coming soon' : 'Coming soon'}
                 </Button>
               )}
             </div>
           );
         })}
       </div>
-
-      {/* Manage subscription */}
-      {currentPlan !== 'free' && (
-        <Card className="p-4 text-center">
-          <p className="text-sm text-[#6b6960]">
-            Need to update payment method, view invoices, or cancel?{' '}
-            <button
-              onClick={onManageBilling}
-              className="font-semibold text-[#5046e5] hover:underline"
-            >
-              Manage subscription →
-            </button>
-          </p>
-        </Card>
-      )}
     </div>
   );
 }
