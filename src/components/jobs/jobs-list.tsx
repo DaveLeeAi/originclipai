@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Badge, StatusDot } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { formatDuration, timeAgo } from '@/lib/utils';
 
 export interface JobSummary {
@@ -342,6 +343,7 @@ export function JobsList({ jobs }: JobsListProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const router = useRouter();
   const { toast } = useToast();
+  const confirm = useConfirm();
 
   const toggleSelected = useCallback((e: React.MouseEvent, jobId: string) => {
     e.preventDefault();
@@ -433,7 +435,12 @@ export function JobsList({ jobs }: JobsListProps) {
     e.stopPropagation();
 
     const title = getJobTitle(job);
-    const confirmed = window.confirm(`Cancel "${title}"?\n\nThe job will stop processing. Any outputs already generated will remain.`);
+    const confirmed = await confirm({
+      title: `Cancel "${title}"?`,
+      description: 'The job will stop processing. Any outputs already generated will remain.',
+      confirmText: 'Cancel Job',
+      variant: 'destructive',
+    });
     if (!confirmed) return;
 
     setCancellingIds((prev) => new Set(prev).add(job.id));
@@ -456,7 +463,12 @@ export function JobsList({ jobs }: JobsListProps) {
     e.stopPropagation();
 
     const title = getJobTitle(job);
-    const confirmed = window.confirm(`Delete "${title}"?\n\nThis will permanently remove the job and all its clips, text outputs, and transcripts.`);
+    const confirmed = await confirm({
+      title: `Delete "${title}"?`,
+      description: 'All clips and text outputs will be permanently removed.',
+      confirmText: 'Delete',
+      variant: 'destructive',
+    });
     if (!confirmed) return;
 
     setDeletingIds((prev) => new Set(prev).add(job.id));
@@ -481,7 +493,12 @@ export function JobsList({ jobs }: JobsListProps) {
 
   async function handleClearFailed(): Promise<void> {
     const count = failedJobs.length;
-    const confirmed = window.confirm(`Delete all ${count} failed job${count === 1 ? '' : 's'}?\n\nThis will permanently remove them and all associated data.`);
+    const confirmed = await confirm({
+      title: `Delete ${count} failed job${count === 1 ? '' : 's'}?`,
+      description: 'This will permanently remove them and all associated data.',
+      confirmText: 'Delete All',
+      variant: 'destructive',
+    });
     if (!confirmed) return;
 
     const ids = failedJobs.map((j) => j.id);
@@ -507,7 +524,12 @@ export function JobsList({ jobs }: JobsListProps) {
     const ids = filtered.filter((j) => selectedIds.has(j.id)).map((j) => j.id);
     if (ids.length === 0) return;
 
-    const confirmed = window.confirm(`Delete ${ids.length} selected job${ids.length === 1 ? '' : 's'}?\n\nThis will permanently remove them and all associated data.`);
+    const confirmed = await confirm({
+      title: `Delete ${ids.length} selected job${ids.length === 1 ? '' : 's'}?`,
+      description: 'This will permanently remove them and all associated data.',
+      confirmText: 'Delete Selected',
+      variant: 'destructive',
+    });
     if (!confirmed) return;
 
     setDeletingIds((prev) => {
