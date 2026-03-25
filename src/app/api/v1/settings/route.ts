@@ -1,17 +1,44 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/client';
-import { getSessionUserId } from '@/lib/auth';
+import { getUser } from '@/lib/auth/server';
 import { z } from 'zod';
 
 const updateSettingsSchema = z.object({
-  defaultCaptionStyle: z.enum(['karaoke', 'subtitle', 'minimal']).optional(),
+  defaultCaptionStyle: z
+    .enum(['karaoke', 'boxed', 'minimal', 'impact', 'subtitle'])
+    .optional(),
   onboardingComplete: z.literal(true).optional(),
 });
 
+export async function GET(): Promise<NextResponse> {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: user.id },
+      select: {
+        defaultCaptionStyle: true,
+      },
+    });
+
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(profile);
+  } catch (error) {
+    console.error('[api] GET /api/v1/settings error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request): Promise<NextResponse> {
   try {
-    const userId = await getSessionUserId();
-    if (!userId) {
+    const user = await getUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -19,7 +46,7 @@ export async function PATCH(request: Request): Promise<NextResponse> {
     const input = updateSettingsSchema.parse(body);
 
     await prisma.profile.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: {
         ...(input.defaultCaptionStyle !== undefined
           ? { defaultCaptionStyle: input.defaultCaptionStyle }
