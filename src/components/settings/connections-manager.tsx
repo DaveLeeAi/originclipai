@@ -51,12 +51,19 @@ const PLATFORMS = [
 
 export function ConnectionsManager({
   connections,
-  onConnect,
-  onDisconnect,
-  onReconnect,
 }: ConnectionsManagerProps) {
   return (
     <div className="space-y-3">
+      {/* Coming soon banner */}
+      <div className="rounded-xl border border-[#5046e5]/20 bg-[#5046e5]/[0.04] px-4 py-3">
+        <p className="text-sm font-medium text-[#5046e5]">
+          OAuth integration launching with v1
+        </p>
+        <p className="mt-0.5 text-xs text-[#6b6960]">
+          Platform connections will be available when scheduling ships. Your accounts below are ready to connect.
+        </p>
+      </div>
+
       {PLATFORMS.map((platform) => {
         const connection = connections.find(
           (c) => c.platform.toLowerCase() === platform.key,
@@ -96,16 +103,17 @@ export function ConnectionsManager({
                   <Button
                     variant="accent-outline"
                     size="sm"
-                    onClick={() => onReconnect(connection.id)}
+                    disabled
+                    className="opacity-60"
                   >
-                    Reconnect
+                    Coming soon
                   </Button>
                 )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onDisconnect(connection.id)}
-                  className="text-[#dc2626] hover:bg-[#dc2626]/[0.04]"
+                  disabled
+                  className="opacity-60"
                 >
                   Disconnect
                 </Button>
@@ -114,9 +122,10 @@ export function ConnectionsManager({
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => onConnect(platform.key)}
+                disabled
+                className="opacity-60"
               >
-                Connect
+                Coming soon
               </Button>
             )}
           </Card>
