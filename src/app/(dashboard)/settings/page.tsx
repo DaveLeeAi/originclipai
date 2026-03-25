@@ -255,48 +255,24 @@ export default function SettingsPage() {
           </select>
         </div>
         <div className="rounded-2xl border border-[#e4e2dd] bg-white p-5">
-          <h2 className="mb-3 text-sm font-bold">Default clip settings</h2>
-          <p className="mb-3 text-xs text-[#a09e96]">
-            These defaults are used when creating new jobs. You can override them per job.
+          <h2 className="mb-1 text-sm font-bold">Default clip settings</h2>
+          <p className="mb-4 text-xs text-[#a09e96]">
+            Default values — custom settings coming in a future update
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <label className="mb-1 block text-xs text-[#6b6960]">Min duration (sec)</label>
-              <input
-                type="number"
-                defaultValue={30}
-                min={15}
-                max={120}
-                disabled
-                className="w-full rounded-lg border border-[#e4e2dd] px-3 py-2 text-sm outline-none disabled:bg-[#f6f5f2] disabled:text-[#a09e96]"
-              />
+            <div className="rounded-xl bg-[#f6f5f2] px-4 py-3">
+              <div className="text-xs text-[#a09e96]">Min duration</div>
+              <div className="mt-0.5 text-lg font-bold text-[#1a1a1a]">30<span className="ml-0.5 text-xs font-normal text-[#a09e96]">sec</span></div>
             </div>
-            <div>
-              <label className="mb-1 block text-xs text-[#6b6960]">Max duration (sec)</label>
-              <input
-                type="number"
-                defaultValue={90}
-                min={30}
-                max={180}
-                disabled
-                className="w-full rounded-lg border border-[#e4e2dd] px-3 py-2 text-sm outline-none disabled:bg-[#f6f5f2] disabled:text-[#a09e96]"
-              />
+            <div className="rounded-xl bg-[#f6f5f2] px-4 py-3">
+              <div className="text-xs text-[#a09e96]">Max duration</div>
+              <div className="mt-0.5 text-lg font-bold text-[#1a1a1a]">90<span className="ml-0.5 text-xs font-normal text-[#a09e96]">sec</span></div>
             </div>
-            <div>
-              <label className="mb-1 block text-xs text-[#6b6960]">Target clips</label>
-              <input
-                type="number"
-                defaultValue={15}
-                min={5}
-                max={30}
-                disabled
-                className="w-full rounded-lg border border-[#e4e2dd] px-3 py-2 text-sm outline-none disabled:bg-[#f6f5f2] disabled:text-[#a09e96]"
-              />
+            <div className="rounded-xl bg-[#f6f5f2] px-4 py-3">
+              <div className="text-xs text-[#a09e96]">Target clips</div>
+              <div className="mt-0.5 text-lg font-bold text-[#1a1a1a]">15<span className="ml-0.5 text-xs font-normal text-[#a09e96]">clips</span></div>
             </div>
           </div>
-          <p className="mt-2 text-[10px] text-[#a09e96]">
-            Clip duration settings will be configurable per-profile in a future update.
-          </p>
         </div>
       </div>
     </div>
