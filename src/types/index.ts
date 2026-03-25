@@ -76,6 +76,8 @@ export interface AnalyzeJobData {
   sourceType: SourceType;
   sourceText?: string;
   customPromptIds?: string[];
+  generationOptions?: GenerationOptions;
+  providerMode?: ProviderMode;
 }
 
 export interface RenderJobData {
@@ -177,6 +179,67 @@ export interface ScoreFactors {
   hookStrength: number;
   topicClarity: number;
   emotionalEnergy: number;
+}
+
+// ─── Cost Control Types ─────────────────────────────────────────────
+
+/**
+ * Controls which outputs the analyze worker generates.
+ * All default to true — set false to skip and save LLM cost.
+ */
+export interface GenerationOptions {
+  clips: boolean;
+  linkedin: boolean;
+  xThread: boolean;
+  newsletter: boolean;
+  summary: boolean;
+  insights: boolean;
+  quotes: boolean;
+  chapterMarkers: boolean;
+  customTemplates: boolean;
+}
+
+export const DEFAULT_GENERATION_OPTIONS: GenerationOptions = {
+  clips: true,
+  linkedin: true,
+  xThread: true,
+  newsletter: true,
+  summary: true,
+  insights: true,
+  quotes: true,
+  chapterMarkers: true,
+  customTemplates: true,
+};
+
+/**
+ * Provider mode determines which LLM backend is used.
+ * - mock: fixture data, zero cost
+ * - gemini-dev: Gemini Flash, cheap dev/iteration
+ * - anthropic-prod: Claude Sonnet, production quality
+ */
+export type ProviderMode = "mock" | "gemini-dev" | "anthropic-prod";
+
+/**
+ * Estimated cost breakdown for a job before submission.
+ */
+export interface CostEstimate {
+  transcription: { calls: number; estimatedCost: number };
+  analysis: { calls: number; estimatedCost: number };
+  textGeneration: { calls: number; estimatedCost: number };
+  total: number;
+  currency: "USD";
+  warnings: string[];
+}
+
+/**
+ * Daily usage stats for guardrail enforcement.
+ */
+export interface UsageStats {
+  llmCallsToday: number;
+  llmCallsLimit: number;
+  estimatedCostToday: number;
+  costLimitDaily: number;
+  jobsToday: number;
 }
 
 // ─── Webhook Types ──────────────────────────────────────────────────

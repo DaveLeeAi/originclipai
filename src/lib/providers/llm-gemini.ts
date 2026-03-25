@@ -1,0 +1,150 @@
+// src/lib/providers/llm-gemini.ts
+//
+// Gemini Flash LLM provider for cheap development/iteration.
+// Uses Google's Gemini 2.0 Flash — significantly cheaper than Claude Sonnet.
+// Activated via providerMode: "gemini-dev" on job creation or LLM_PROVIDER_MODE=gemini-dev env.
+//
+// Cost comparison (approximate):
+//   Claude Sonnet: ~$3/M input, ~$15/M output
+//   Gemini Flash:  ~$0.075/M input, ~$0.30/M output (40x cheaper)
+
+import { z } from "zod";
+import type { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from "./llm";
+import { cleanLLMResponse } from "@/lib/llm/response-cleaner";
+
+const DEFAULT_MODEL = "gemini-2.0-flash";
+
+/**
+ * Google Gemini Flash LLM provider.
+ * Drop-in replacement for AnthropicLLMProvider at ~40x lower cost.
+ * Quality is lower but sufficient for development iteration and testing pipeline logic.
+ */
+export class GeminiLLMProvider implements LLMProvider {
+  readonly name = "gemini";
+  private apiKey: string;
+
+  constructor() {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is required for GeminiLLMProvider");
+    }
+    this.apiKey = apiKey;
+  }
+
+  async chat(messages: LLMMessage[], options?: LLMOptions): Promise<LLMResponse> {
+    const model = options?.model ?? DEFAULT_MODEL;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+
+    // Convert messages to Gemini format
+    const systemMessages = messages.filter((m) => m.role === "system");
+    const nonSystemMessages = messages.filter((m) => m.role !== "system");
+
+    const systemInstruction = systemMessages.length > 0
+      ? { parts: [{ text: systemMessages.map((m) => m.content).join("\n\n") }] }
+      : undefined;
+
+    const contents = nonSystemMessages.map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
+
+    const body: Record<string, unknown> = {
+      contents,
+      generationConfig: {
+        temperature: options?.temperature ?? 0.3,
+        maxOutputTokens: options?.maxTokens ?? 4096,
+        responseMimeType: "text/plain",
+      },
+    };
+
+    if (systemInstruction) {
+      body.systemInstruction = systemInstruction;
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json() as {
+      candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> };
+      }>;
+      usageMetadata?: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+      };
+    };
+
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const inputTokens = data.usageMetadata?.promptTokenCount ?? 0;
+    const outputTokens = data.usageMetadata?.candidatesTokenCount ?? 0;
+
+    console.log(
+      `[llm] gemini/${model} — input: ${inputTokens}, output: ${outputTokens}`,
+    );
+
+    return {
+      content,
+      usage: { inputTokens, outputTokens },
+    };
+  }
+
+  async chatStructured<T>(
+    messages: LLMMessage[],
+    schema: z.ZodSchema<T>,
+    options?: LLMOptions,
+  ): Promise<T> {
+    // Request JSON output from Gemini
+    const jsonMessages = [
+      ...messages,
+      {
+        role: "user" as const,
+        content: "IMPORTANT: Return ONLY valid JSON. No markdown fences, no explanation, just the raw JSON object.",
+      },
+    ];
+
+    const response = await this.chat(jsonMessages, options);
+
+    try {
+      const cleaned = cleanLLMResponse(response.content);
+      const parsed: unknown = JSON.parse(cleaned);
+      return schema.parse(parsed);
+    } catch (firstError) {
+      // Retry once with format reinforcement
+      console.warn(
+        `[llm] Gemini parse failed, retrying with format reinforcement:`,
+        firstError instanceof Error ? firstError.message : firstError,
+      );
+
+      const retryMessages: LLMMessage[] = [
+        ...messages,
+        { role: "assistant", content: response.content },
+        {
+          role: "user",
+          content:
+            "Your previous response was not valid JSON or did not match the required schema. Return ONLY a valid JSON response with no other text, no markdown fences, no explanation. Just the raw JSON.",
+        },
+      ];
+
+      const retryResponse = await this.chat(retryMessages, {
+        ...options,
+        temperature: 0.1,
+      });
+
+      const cleaned = cleanLLMResponse(retryResponse.content);
+      const parsed: unknown = JSON.parse(cleaned);
+      return schema.parse(parsed);
+    }
+  }
+
+  async isAvailable(): Promise<boolean> {
+    return !!process.env.GEMINI_API_KEY;
+  }
+}

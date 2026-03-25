@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import type { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from "./llm";
 import { cleanLLMResponse } from "@/lib/llm/response-cleaner";
-import { isMockAI, isNoExternalAPIs, logMock } from "@/lib/dev-mode";
+import { isMockAI, isNoExternalAPIs, logMock, logProvider } from "@/lib/dev-mode";
 
 const DEFAULT_MODEL = "claude-sonnet-4-20250514";
 
@@ -98,41 +98,99 @@ export class AnthropicLLMProvider implements LLMProvider {
   }
 }
 
-let llmInstance: LLMProvider | null = null;
+// ─── Provider Instance Cache ─────────────────────────────────────────
+// Keyed by mode to allow switching between providers within the same process.
+
+const llmInstances = new Map<string, LLMProvider>();
 
 /**
  * Get the configured LLM provider.
- * Returns MockLLMProvider when MOCK_AI=true or DEV_NO_EXTERNAL_APIS=true.
- * Returns AnthropicLLMProvider if ANTHROPIC_API_KEY is set.
- * Throws a clear error at call time (not at import time) if not configured.
+ *
+ * Supports three modes:
+ * - "mock": fixture data, zero cost (env: MOCK_AI=true or DEV_NO_EXTERNAL_APIS=true)
+ * - "gemini-dev": Gemini Flash, ~40x cheaper than Anthropic (env: GEMINI_API_KEY)
+ * - "anthropic-prod": Claude Sonnet, production quality (env: ANTHROPIC_API_KEY)
+ *
+ * @param mode Override the provider mode. If omitted, resolves from env flags.
  */
-export function getLLMProvider(): LLMProvider {
-  if (!llmInstance) {
-    if (isMockAI() || isNoExternalAPIs()) {
-      logMock("llm", "Using MockLLMProvider — no Anthropic API calls will be made");
-      // Lazy import to avoid loading fixture data when not needed
+export function getLLMProvider(mode?: string): LLMProvider {
+  const { resolveProviderMode } = require("@/lib/dev-mode") as typeof import("@/lib/dev-mode");
+  const effectiveMode = resolveProviderMode(
+    mode as import("@/types").ProviderMode | undefined,
+  );
+
+  const cached = llmInstances.get(effectiveMode);
+  if (cached) return cached;
+
+  let provider: LLMProvider;
+
+  switch (effectiveMode) {
+    case "mock": {
+      logMock("llm", "Using MockLLMProvider — no paid API calls will be made");
       const { MockLLMProvider } = require("./llm-mock") as { MockLLMProvider: new () => LLMProvider };
-      llmInstance = new MockLLMProvider();
-    } else if (!process.env.ANTHROPIC_API_KEY) {
-      throw new Error(
-        "ANTHROPIC_API_KEY is not set. The analyze worker requires a configured LLM provider. " +
-        "Set MOCK_AI=true for local development without API costs, or set the API key and restart.",
-      );
-    } else {
-      llmInstance = new AnthropicLLMProvider();
+      provider = new MockLLMProvider();
+      break;
     }
+
+    case "gemini-dev": {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error(
+          "GEMINI_API_KEY is not set. Set the key for gemini-dev mode, " +
+          "or use MOCK_AI=true for zero-cost development.",
+        );
+      }
+      logProvider("llm", "gemini-dev", "Using GeminiLLMProvider — cheap dev iteration mode");
+      const { GeminiLLMProvider } = require("./llm-gemini") as { GeminiLLMProvider: new () => LLMProvider };
+      provider = new GeminiLLMProvider();
+      break;
+    }
+
+    case "anthropic-prod": {
+      if (!process.env.ANTHROPIC_API_KEY) {
+        throw new Error(
+          "ANTHROPIC_API_KEY is not set. The analyze worker requires a configured LLM provider. " +
+          "Set MOCK_AI=true for local development without API costs, or set the API key and restart.",
+        );
+      }
+      provider = new AnthropicLLMProvider();
+      break;
+    }
+
+    default:
+      throw new Error(`Unknown LLM provider mode: ${effectiveMode}`);
   }
-  return llmInstance;
+
+  llmInstances.set(effectiveMode, provider);
+  return provider;
 }
 
 /**
  * Check if an LLM provider is available without throwing.
  */
-export function isLLMAvailable(): boolean {
-  return isMockAI() || isNoExternalAPIs() || !!process.env.ANTHROPIC_API_KEY;
+export function isLLMAvailable(mode?: string): boolean {
+  const { resolveProviderMode } = require("@/lib/dev-mode") as typeof import("@/lib/dev-mode");
+  const effectiveMode = resolveProviderMode(
+    mode as import("@/types").ProviderMode | undefined,
+  );
+
+  switch (effectiveMode) {
+    case "mock":
+      return true;
+    case "gemini-dev":
+      return !!process.env.GEMINI_API_KEY;
+    case "anthropic-prod":
+      return !!process.env.ANTHROPIC_API_KEY;
+    default:
+      return false;
+  }
 }
 
 /** For testing — inject a mock provider */
-export function setLLMProvider(provider: LLMProvider): void {
-  llmInstance = provider;
+export function setLLMProvider(provider: LLMProvider, mode = "mock"): void {
+  llmInstances.set(mode, provider);
+}
+
+/** Clear all cached providers (for testing) */
+export function clearLLMProviders(): void {
+  llmInstances.clear();
 }

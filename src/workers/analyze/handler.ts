@@ -10,9 +10,10 @@ import {
   type SpeakerRoleResult,
 } from "@/prompts";
 import { formatDuration } from "@/lib/utils/duration";
-import { isDevMockMode, logMock } from "@/lib/dev-mode";
+import { isDevMockMode, logMock, resolveProviderMode, logProvider } from "@/lib/dev-mode";
+import { incrementLLMCallCount } from "@/lib/cost/guardrails";
 import type { LLMProvider } from "@/lib/providers/llm";
-import type { AnalyzeJobData, Speaker, TranscriptSegment, TextOutputType, WordTimestamp } from "@/types";
+import type { AnalyzeJobData, Speaker, TranscriptSegment, TextOutputType, WordTimestamp, GenerationOptions } from "@/types";
 
 // Intelligence layer imports
 import {
@@ -68,7 +69,30 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
     }
 
     const isTextOnly = TEXT_ONLY_SOURCES.includes(sourceType);
-    const llm = getLLMProvider();
+
+    // Resolve generation options from job record (set at creation time)
+    const genOpts: GenerationOptions = {
+      clips: true,
+      linkedin: true,
+      xThread: true,
+      newsletter: true,
+      summary: true,
+      insights: true,
+      quotes: true,
+      chapterMarkers: true,
+      customTemplates: true,
+      ...(job.generationOptions as Partial<GenerationOptions> ?? {}),
+      ...(data.generationOptions ?? {}),
+    };
+
+    // Resolve provider mode: per-job data > job record > env > default
+    const effectiveMode = resolveProviderMode(
+      data.providerMode ?? (job.providerMode as import("@/types").ProviderMode) ?? undefined,
+    );
+    logProvider("analyze", effectiveMode, `Job ${jobId} — mode: ${effectiveMode}`);
+
+    const llm = getLLMProvider(effectiveMode);
+    let llmCallCount = 0;
 
     let fullText: string;
     let speakers: Speaker[] = [];
@@ -112,54 +136,59 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
         });
       }
 
-      // Step 2: Clip detection via intelligence layer
-      await updateJobProgress(jobId, "analyze", "running", {
-        substep: "clip_scoring",
-      });
-
-      const clipResult = await detectClips(llm, {
-        sourceTitle: job.sourceTitle ?? "Untitled",
-        durationSeconds,
-        contentType: detectContentType(speakers),
-        speakers,
-        transcript: fullText,
-        minDuration: 30,
-        maxDuration: 90,
-        targetClips: 15,
-      });
-
-      // Store clips in DB with expanded score factors
-      let sortOrder = 0;
-      for (const clip of clipResult.clips) {
-        await prisma.clip.create({
-          data: {
-            jobId,
-            startTime: clip.startTime,
-            endTime: clip.endTime,
-            duration: clip.duration,
-            title: clip.title,
-            hook: clip.hook ?? null,
-            transcriptExcerpt: clip.transcriptExcerpt,
-            score: clip.score,
-            scoreFactors: JSON.parse(JSON.stringify(clip.scoreFactors)),
-            primarySpeakerId: clip.primarySpeakerId,
-            speakerRole: mapSpeakerRole(clip.primarySpeakerId, speakers),
-            speakersPresent: JSON.parse(JSON.stringify(clip.speakersPresent)),
-            socialCaption: clip.socialCaption ?? null,
-            hashtags: JSON.parse(JSON.stringify(clip.topics ?? [])),
-            sortOrder: sortOrder++,
-          },
+      // Step 2: Clip detection via intelligence layer (if enabled)
+      if (genOpts.clips) {
+        await updateJobProgress(jobId, "analyze", "running", {
+          substep: "clip_scoring",
         });
+
+        const clipResult = await detectClips(llm, {
+          sourceTitle: job.sourceTitle ?? "Untitled",
+          durationSeconds,
+          contentType: detectContentType(speakers),
+          speakers,
+          transcript: fullText,
+          minDuration: 30,
+          maxDuration: 90,
+          targetClips: 15,
+        });
+        llmCallCount++;
+
+        // Store clips in DB with expanded score factors
+        let sortOrder = 0;
+        for (const clip of clipResult.clips) {
+          await prisma.clip.create({
+            data: {
+              jobId,
+              startTime: clip.startTime,
+              endTime: clip.endTime,
+              duration: clip.duration,
+              title: clip.title,
+              hook: clip.hook ?? null,
+              transcriptExcerpt: clip.transcriptExcerpt,
+              score: clip.score,
+              scoreFactors: JSON.parse(JSON.stringify(clip.scoreFactors)),
+              primarySpeakerId: clip.primarySpeakerId,
+              speakerRole: mapSpeakerRole(clip.primarySpeakerId, speakers),
+              speakersPresent: JSON.parse(JSON.stringify(clip.speakersPresent)),
+              socialCaption: clip.socialCaption ?? null,
+              hashtags: JSON.parse(JSON.stringify(clip.topics ?? [])),
+              sortOrder: sortOrder++,
+            },
+          });
+        }
+
+        await updateJobProgress(jobId, "analyze", "running", {
+          clipsFound: clipResult.clips.length,
+        });
+
+        await prisma.job.update({
+          where: { id: jobId },
+          data: { clipCount: clipResult.clips.length },
+        });
+      } else {
+        console.log(`[analyze] Clips disabled for job ${jobId} — skipping clip detection`);
       }
-
-      await updateJobProgress(jobId, "analyze", "running", {
-        clipsFound: clipResult.clips.length,
-      });
-
-      await prisma.job.update({
-        where: { id: jobId },
-        data: { clipCount: clipResult.clips.length },
-      });
     }
 
     // Step 3: Intelligence extraction + text generation (parallel)
@@ -175,43 +204,59 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
     // Truncate content for text generation prompts
     const contentForText = fullText.slice(0, 100_000);
 
-    // Run intelligence extraction and text generation in parallel
-    const [insightsResult, summaryResult, textResults] = await Promise.all([
-      // Insights + quotes
-      extractInsightsAndQuotes(llm, {
-        sourceTitle: job.sourceTitle ?? "Untitled",
-        sourceType,
-        chunks,
-        speakers,
-        maxInsights: 10,
-        maxQuotes: 8,
-      }).catch((err) => {
-        console.warn(`[analyze] Insight/quote extraction failed for job ${jobId}:`, err);
-        return null;
-      }),
+    // Build parallel tasks based on generation options
+    const insightsEnabled = genOpts.insights || genOpts.quotes;
+    const summaryEnabled = genOpts.summary;
+    const textEnabled = genOpts.linkedin || genOpts.xThread || genOpts.newsletter || genOpts.chapterMarkers;
+
+    const parallelTasks: [
+      Promise<Awaited<ReturnType<typeof extractInsightsAndQuotes>> | null>,
+      Promise<Awaited<ReturnType<typeof generateTranscriptSummary>> | null>,
+      Promise<TextOutputRecord[]>,
+    ] = [
+      // Insights + quotes (if either enabled)
+      insightsEnabled
+        ? extractInsightsAndQuotes(llm, {
+            sourceTitle: job.sourceTitle ?? "Untitled",
+            sourceType,
+            chunks,
+            speakers,
+            maxInsights: genOpts.insights ? 10 : 0,
+            maxQuotes: genOpts.quotes ? 8 : 0,
+          }).then((r) => { llmCallCount++; return r; }).catch((err) => {
+            console.warn(`[analyze] Insight/quote extraction failed for job ${jobId}:`, err);
+            return null;
+          })
+        : Promise.resolve(null),
 
       // Summary via intelligence layer
-      generateTranscriptSummary(llm, {
-        sourceTitle: job.sourceTitle ?? "Untitled",
-        sourceType,
-        chunks,
-        speakers,
-      }).catch((err) => {
-        console.warn(`[analyze] Summary generation failed for job ${jobId}:`, err);
-        return null;
-      }),
+      summaryEnabled
+        ? generateTranscriptSummary(llm, {
+            sourceTitle: job.sourceTitle ?? "Untitled",
+            sourceType,
+            chunks,
+            speakers,
+          }).then((r) => { llmCallCount++; return r; }).catch((err) => {
+            console.warn(`[analyze] Summary generation failed for job ${jobId}:`, err);
+            return null;
+          })
+        : Promise.resolve(null),
 
-      // Platform text outputs
-      generateAllTextOutputs(llm, {
-        sourceTitle: job.sourceTitle ?? "Untitled",
-        sourceType,
-        content: contentForText,
-        speakers,
-        isTextOnly,
-        durationSeconds,
-        transcript: fullText,
-      }),
-    ]);
+      // Platform text outputs (filtered by genOpts inside)
+      textEnabled
+        ? generateAllTextOutputs(llm, {
+            sourceTitle: job.sourceTitle ?? "Untitled",
+            sourceType,
+            content: contentForText,
+            speakers,
+            isTextOnly,
+            durationSeconds,
+            transcript: fullText,
+          }, genOpts)
+        : Promise.resolve([]),
+    ];
+
+    const [insightsResult, summaryResult, textResults] = await Promise.all(parallelTasks);
 
     // Store all text outputs
     let textSortOrder = 0;
@@ -305,12 +350,17 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
       });
     }
 
-    // Step 4: Execute custom prompt templates
+    // Step 4: Execute custom prompt templates (if enabled)
     let customOutputCount = 0;
+    if (!genOpts.customTemplates) {
+      console.log(`[analyze] Custom templates disabled for job ${jobId} — skipping`);
+    }
     try {
-      const customTemplates = await prisma.promptTemplate.findMany({
-        where: { userId: job.userId, isActive: true },
-      });
+      const customTemplates = genOpts.customTemplates
+        ? await prisma.promptTemplate.findMany({
+            where: { userId: job.userId, isActive: true },
+          })
+        : [];
 
       if (customTemplates.length > 0) {
         await updateJobProgress(jobId, "analyze", "running", {
@@ -390,6 +440,9 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
     const summaryCount = summaryResult ? 1 : 0;
     const platformTextCount = textResults.filter((t) => t.type !== "summary").length;
     const totalTextOutputs = summaryCount + insightCount + quoteCount + platformTextCount + customOutputCount;
+
+    // Track LLM call count for cost guardrails
+    await incrementLLMCallCount(jobId, llmCallCount).catch(() => {});
 
     await prisma.job.update({
       where: { id: jobId },
@@ -567,19 +620,32 @@ interface TextOutputRecord {
 async function generateAllTextOutputs(
   llm: LLMProvider,
   input: TextGenerationInput,
+  genOpts?: GenerationOptions,
 ): Promise<TextOutputRecord[]> {
   const results: TextOutputRecord[] = [];
+  const opts = genOpts ?? {
+    clips: true, linkedin: true, xThread: true, newsletter: true,
+    summary: true, insights: true, quotes: true, chapterMarkers: true, customTemplates: true,
+  };
 
-  const tasks = [
-    generateLinkedinPosts(llm, input),
-    generateXThreads(llm, input),
-    generateNewsletterSections(llm, input),
-  ];
+  const tasks: Promise<TextOutputRecord[]>[] = [];
+
+  if (opts.linkedin) {
+    tasks.push(generateLinkedinPosts(llm, input));
+  }
+  if (opts.xThread) {
+    tasks.push(generateXThreads(llm, input));
+  }
+  if (opts.newsletter) {
+    tasks.push(generateNewsletterSections(llm, input));
+  }
 
   // Chapter markers only for video/audio with timestamps
-  if (!input.isTextOnly && input.durationSeconds > 0) {
+  if (opts.chapterMarkers && !input.isTextOnly && input.durationSeconds > 0) {
     tasks.push(generateChapterMarkers(llm, input));
   }
+
+  if (tasks.length === 0) return results;
 
   const settled = await Promise.allSettled(tasks);
 

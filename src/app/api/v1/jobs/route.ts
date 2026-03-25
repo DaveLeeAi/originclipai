@@ -3,13 +3,20 @@ import { prisma } from "@/lib/db/client";
 import { ingestQueue } from "@/lib/queue/queues";
 import { createJobSchema } from "@/lib/utils/validation";
 import { getUser } from "@/lib/auth/server";
+import { generateContentHash } from "@/lib/cost/content-hash";
+import { estimateJobCost } from "@/lib/cost/estimator";
+import { checkJobGuardrails } from "@/lib/cost/guardrails";
 import type { JobProgress } from "@/types";
 
 /**
  * POST /api/v1/jobs — Create a new processing job.
  *
- * Validates input, creates a job record, enqueues the ingest step.
+ * Validates input, checks cost guardrails, creates a job record, enqueues the ingest step.
  * Returns the job ID immediately — polling via GET /api/v1/jobs/:id for status.
+ *
+ * New cost-control fields:
+ * - generationOptions: controls which outputs to generate (all default true)
+ * - providerMode: "mock" | "gemini-dev" | "anthropic-prod"
  */
 export async function POST(request: Request): Promise<NextResponse> {
   try {
@@ -24,6 +31,53 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
     const userId = user.id;
+
+    // Resolve generation options with defaults
+    const generationOptions = {
+      clips: true,
+      linkedin: true,
+      xThread: true,
+      newsletter: true,
+      summary: true,
+      insights: true,
+      quotes: true,
+      chapterMarkers: true,
+      customTemplates: true,
+      ...input.generationOptions,
+    };
+
+    const providerMode = input.providerMode ?? "anthropic-prod";
+
+    // Check guardrails before creating job
+    const guardrailResult = await checkJobGuardrails(userId, {
+      sourceType: input.sourceType,
+      generationOptions,
+      providerMode,
+    });
+
+    if (!guardrailResult.allowed) {
+      return NextResponse.json(
+        {
+          error: "Usage limit exceeded",
+          blocked: guardrailResult.blocked,
+        },
+        { status: 429 },
+      );
+    }
+
+    // Generate content hash for dedupe
+    const contentHash = generateContentHash({
+      sourceType: input.sourceType,
+      sourceUrl: "sourceUrl" in input ? input.sourceUrl : null,
+      sourceFileKey: "sourceFileKey" in input ? input.sourceFileKey : null,
+    });
+
+    // Estimate cost
+    const estimate = estimateJobCost({
+      sourceType: input.sourceType,
+      generationOptions,
+      providerMode,
+    });
 
     // Create job record
     const initialProgress: JobProgress = {
@@ -41,6 +95,10 @@ export async function POST(request: Request): Promise<NextResponse> {
         sourceFileKey: "sourceFileKey" in input ? input.sourceFileKey : null,
         status: "created",
         progress: JSON.parse(JSON.stringify(initialProgress)),
+        generationOptions: JSON.parse(JSON.stringify(generationOptions)),
+        providerMode,
+        contentHash,
+        estimatedCost: estimate.total,
       },
     });
 
@@ -63,6 +121,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         jobId: job.id,
         status: job.status,
         createdAt: job.createdAt.toISOString(),
+        providerMode,
+        estimatedCost: estimate.total,
+        warnings: guardrailResult.warnings,
       },
       { status: 201 },
     );

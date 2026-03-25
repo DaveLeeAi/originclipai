@@ -25,7 +25,7 @@ export async function handleTranscribeJob(data: TranscribeJobData): Promise<void
     await updateJobStatus(jobId, "transcribing");
     await updateJobProgress(jobId, "transcribe", "running");
 
-    // Idempotency: check if transcript already exists
+    // Idempotency: check if transcript already exists for this job
     const existing = await prisma.transcript.findUnique({
       where: { jobId },
     });
@@ -41,6 +41,69 @@ export async function handleTranscribeJob(data: TranscribeJobData): Promise<void
         sourceType: "youtube_url", // Will be resolved from job record
       });
       return;
+    }
+
+    // Content hash dedupe: check if another job with the same source already has a transcript.
+    // This avoids re-transcribing the same YouTube video, URL, or file.
+    const job = await prisma.job.findUniqueOrThrow({ where: { id: jobId } });
+    if (job.contentHash) {
+      const priorJob = await prisma.job.findFirst({
+        where: {
+          contentHash: job.contentHash,
+          id: { not: jobId },
+          status: { in: ["complete", "analyzing", "rendering"] },
+        },
+        select: { id: true },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (priorJob) {
+        const priorTranscript = await prisma.transcript.findUnique({
+          where: { jobId: priorJob.id },
+        });
+
+        if (priorTranscript) {
+          console.log(
+            `[transcribe] Content hash match — reusing transcript from job ${priorJob.id} for job ${jobId}`,
+          );
+
+          // Clone the transcript for this job
+          const cloned = await prisma.transcript.create({
+            data: {
+              jobId,
+              fullText: priorTranscript.fullText,
+              language: priorTranscript.language,
+              segments: priorTranscript.segments as object,
+              speakers: priorTranscript.speakers as object,
+              wordTimestamps: priorTranscript.wordTimestamps as object,
+              engine: priorTranscript.engine,
+              durationSeconds: priorTranscript.durationSeconds,
+              wordCount: priorTranscript.wordCount,
+              confidenceAvg: priorTranscript.confidenceAvg,
+            },
+          });
+
+          await prisma.job.update({
+            where: { id: jobId },
+            data: {
+              sourceDurationSeconds: priorTranscript.durationSeconds,
+              minutesConsumed: (priorTranscript.durationSeconds ?? 0) / 60,
+            },
+          });
+
+          await updateJobProgress(jobId, "transcribe", "complete", {
+            speakers_found: (priorTranscript.speakers as unknown[]).length,
+            reused_from: priorJob.id,
+          });
+          await updateJobStatus(jobId, "analyzing");
+          await analyzeQueue().add("analyze", {
+            jobId,
+            transcriptId: cloned.id,
+            sourceType: job.sourceType,
+          });
+          return;
+        }
+      }
     }
 
     // Step 1: Get a signed URL for the source file (for provider API access)
@@ -166,12 +229,13 @@ export async function handleTranscribeJob(data: TranscribeJobData): Promise<void
     });
 
     // Step 5: Enqueue analyze step
-    const job = await prisma.job.findUniqueOrThrow({ where: { id: jobId } });
+    // Re-fetch job to get latest sourceType (job was fetched earlier for content hash)
+    const jobForAnalyze = await prisma.job.findUniqueOrThrow({ where: { id: jobId } });
     await updateJobStatus(jobId, "analyzing");
     await analyzeQueue().add("analyze", {
       jobId,
       transcriptId: transcript.id,
-      sourceType: job.sourceType,
+      sourceType: jobForAnalyze.sourceType,
     });
   } catch (error) {
     await updateJobProgress(jobId, "transcribe", "error").catch(() => {});

@@ -2,12 +2,14 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useClips, useTextOutputs, useUpdateClip, useRefineText } from '@/lib/hooks/use-jobs';
+import { useJob, useClips, useTextOutputs, useUpdateClip, useRefineText } from '@/lib/hooks/use-jobs';
 import { ClipList, type ClipItem } from '@/components/review/clip-list';
 import { ClipDetail } from '@/components/review/clip-detail';
 import { TextList, TextDetail, type TextItem } from '@/components/review/text-list';
 import { useReviewShortcuts } from '@/components/review/use-review-shortcuts';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { cn, formatDuration } from '@/lib/utils';
+import Link from 'next/link';
 
 interface Props {
   jobId: string;
@@ -15,18 +17,28 @@ interface Props {
 
 type Tab = 'clips' | 'text';
 
+const SOURCE_LABELS: Record<string, string> = {
+  youtube_url: 'YouTube',
+  video_url: 'Video URL',
+  video_upload: 'Video',
+  audio_upload: 'Audio',
+  article_url: 'Article',
+  pdf_upload: 'PDF',
+};
+
 export function ReviewClient({ jobId }: Props) {
   const [tab, setTab] = useState<Tab>('clips');
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
 
-  const { clips, refresh: refreshClips } = useClips(jobId);
-  const { textOutputs, refresh: refreshTexts } = useTextOutputs(jobId);
+  const { job, isLoading: jobLoading, error: jobError } = useJob(jobId);
+  const { clips, isLoading: clipsLoading, error: clipsError, refresh: refreshClips } = useClips(jobId);
+  const { textOutputs, isLoading: textsLoading, error: textsError, refresh: refreshTexts } = useTextOutputs(jobId);
   const { updateClip } = useUpdateClip();
   const { refineText } = useRefineText();
 
   // Map API data to component types
-  const clipItems: ClipItem[] = clips.map((c: { id: string; title: string; startTime: number; endTime: number; duration: number; score: number; primarySpeakerId?: string; speakerRole?: string; status: string; platforms?: string[]; renderStatus?: string }) => ({
+  const clipItems: ClipItem[] = clips.map((c: { id: string; title: string; startTime: number; endTime: number; duration: number; score: number; primarySpeakerId?: string; speakerRole?: string; status: string; platforms?: string[]; renderStatus?: string; hook?: string; transcriptExcerpt?: string; scoreFactors?: { coherence: number; hookStrength: number; topicClarity: number; emotionalEnergy: number }; socialCaption?: string; hashtags?: string[] }) => ({
     id: c.id,
     title: c.title,
     startTime: c.startTime,
@@ -39,6 +51,11 @@ export function ReviewClient({ jobId }: Props) {
     status: c.status.toLowerCase() as ClipItem['status'],
     platforms: c.platforms ?? [],
     renderStatus: c.renderStatus ?? 'pending',
+    hook: c.hook,
+    transcriptExcerpt: c.transcriptExcerpt,
+    scoreFactors: c.scoreFactors,
+    socialCaption: c.socialCaption,
+    hashtags: c.hashtags,
   }));
 
   const textItems: TextItem[] = textOutputs.map((t: { id: string; type: string; label: string; content: string; wordCount: number; status: string; platform?: string }) => ({
@@ -103,6 +120,15 @@ export function ReviewClient({ jobId }: Props) {
     return result.refinedText;
   };
 
+  const handleSaveText = async (textId: string, content: string): Promise<void> => {
+    await fetch(`/api/v1/texts/${textId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    refreshTexts();
+  };
+
   const handleCopy = (content: string) => {
     navigator.clipboard.writeText(content);
   };
@@ -139,8 +165,99 @@ export function ReviewClient({ jobId }: Props) {
     }
   };
 
+  // Loading state
+  if (jobLoading && !job) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[#e4e2dd] border-t-[#5046e5]" />
+          <p className="text-sm text-[#a09e96]">Loading job...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (jobError || clipsError || textsError) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#dc2626]/20 bg-[#dc2626]/[0.04]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <p className="mb-2 text-sm font-semibold text-[#dc2626]">Failed to load review data</p>
+          <p className="mb-4 text-xs text-[#a09e96]">
+            {(jobError ?? clipsError ?? textsError)?.message ?? 'An unexpected error occurred.'}
+          </p>
+          <Link
+            href="/jobs"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#e4e2dd] bg-white px-4 py-2 text-xs font-semibold text-[#6b6960] shadow-sm hover:shadow-md"
+          >
+            Back to jobs
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Approval stats
+  const approvedClips = clipItems.filter((c) => c.status === 'approved').length;
+  const approvedTexts = textItems.filter((t) => t.status === 'approved').length;
+
   return (
     <div className="flex h-full flex-col">
+      {/* Job header */}
+      <div className="border-b border-[#e4e2dd] bg-white px-6 py-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/jobs"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#e4e2dd] text-[#a09e96] hover:border-[#5046e5] hover:text-[#5046e5]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </Link>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-base font-bold tracking-tight">
+              {job?.sourceTitle ?? 'Untitled job'}
+            </h1>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[#a09e96]">
+              {job?.sourceType && (
+                <span>{SOURCE_LABELS[job.sourceType] ?? job.sourceType}</span>
+              )}
+              {job?.sourceDurationSeconds != null && job.sourceDurationSeconds > 0 && (
+                <>
+                  <span className="text-[#e4e2dd]">·</span>
+                  <span>{formatDuration(job.sourceDurationSeconds)}</span>
+                </>
+              )}
+              {job?.transcript?.speakerCount != null && job.transcript.speakerCount > 0 && (
+                <>
+                  <span className="text-[#e4e2dd]">·</span>
+                  <span>{job.transcript.speakerCount} speakers</span>
+                </>
+              )}
+              {job?.transcript?.wordCount != null && job.transcript.wordCount > 0 && (
+                <>
+                  <span className="text-[#e4e2dd]">·</span>
+                  <span>{job.transcript.wordCount.toLocaleString()} words</span>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {approvedClips > 0 && (
+              <Badge variant="green">{approvedClips}/{clipItems.length} clips approved</Badge>
+            )}
+            {approvedTexts > 0 && (
+              <Badge variant="cyan">{approvedTexts}/{textItems.length} text approved</Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="flex items-center border-b border-[#e4e2dd] bg-white px-6">
         {([
@@ -186,17 +303,25 @@ export function ReviewClient({ jobId }: Props) {
         {/* Left panel — list */}
         <div className="w-[420px] min-w-[420px] border-r border-[#e4e2dd] bg-white">
           {tab === 'clips' ? (
-            <ClipList
-              clips={clipItems}
-              selectedId={selectedClipId}
-              onSelect={setSelectedClipId}
-            />
+            clipsLoading && clipItems.length === 0 ? (
+              <ListSkeleton />
+            ) : (
+              <ClipList
+                clips={clipItems}
+                selectedId={selectedClipId}
+                onSelect={setSelectedClipId}
+              />
+            )
           ) : (
-            <TextList
-              items={textItems}
-              selectedId={selectedTextId}
-              onSelect={setSelectedTextId}
-            />
+            textsLoading && textItems.length === 0 ? (
+              <ListSkeleton />
+            ) : (
+              <TextList
+                items={textItems}
+                selectedId={selectedTextId}
+                onSelect={setSelectedTextId}
+              />
+            )
           )}
         </div>
 
@@ -204,18 +329,17 @@ export function ReviewClient({ jobId }: Props) {
         <div className="flex-1 overflow-auto bg-[#f6f5f2]">
           {tab === 'clips' && selectedClip ? (
             <ClipDetail
-              clip={{
-                ...selectedClip,
-                speakerLabel: selectedClip.speakerLabel,
-              }}
+              clip={selectedClip}
               onApprove={(id) => { updateClip({ clipId: id, status: 'approved' }); refreshClips(); }}
               onReject={(id) => { updateClip({ clipId: id, status: 'rejected' }); refreshClips(); }}
               onTogglePlatform={handleTogglePlatform}
             />
           ) : tab === 'text' && selectedText ? (
             <TextDetail
+              key={selectedText.id}
               item={selectedText}
               onRefine={handleRefineText}
+              onSave={handleSaveText}
               onCopy={handleCopy}
               onApprove={handleApproveText}
             />
@@ -237,6 +361,25 @@ export function ReviewClient({ jobId }: Props) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Skeleton for the left panel while data loads. */
+function ListSkeleton() {
+  return (
+    <div className="space-y-2 p-3">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="animate-pulse rounded-xl border border-transparent p-3.5">
+          <div className="mb-2 flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full bg-[#e4e2dd]" />
+            <div className="h-3 flex-1 rounded bg-[#e4e2dd]" />
+            <div className="h-4 w-8 rounded bg-[#e4e2dd]" />
+          </div>
+          <div className="mb-1.5 h-4 w-3/4 rounded bg-[#e4e2dd]" />
+          <div className="h-3 w-1/2 rounded bg-[#e4e2dd]" />
+        </div>
+      ))}
     </div>
   );
 }

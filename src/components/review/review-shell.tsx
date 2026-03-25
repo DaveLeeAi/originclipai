@@ -142,6 +142,20 @@ export function ReviewShell({ sourceTitle, initialClips, initialTexts }: ReviewS
     [],
   );
 
+  const handleSaveText = useCallback(async (id: string, content: string) => {
+    const res = await fetch(`/api/v1/texts/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setTexts((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, content: updated.content, wordCount: updated.wordCount } : t)),
+      );
+    }
+  }, []);
+
   const handleCopyText = useCallback((content: string) => {
     navigator.clipboard.writeText(content);
   }, []);
@@ -248,8 +262,10 @@ export function ReviewShell({ sourceTitle, initialClips, initialTexts }: ReviewS
             <div className="flex-1 overflow-auto bg-[#f6f5f2]">
               {selectedText ? (
                 <TextDetail
+                  key={selectedText.id}
                   item={selectedText}
                   onRefine={handleRefineText}
+                  onSave={handleSaveText}
                   onCopy={handleCopyText}
                   onApprove={handleApproveText}
                 />

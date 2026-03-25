@@ -8,16 +8,7 @@ import { formatDuration } from '@/lib/utils';
 import type { ClipItem } from './clip-list';
 
 interface ClipDetailProps {
-  clip: ClipItem & {
-    hook?: string;
-    transcriptExcerpt?: string;
-    scoreFactors?: {
-      coherence: number;
-      hookStrength: number;
-      topicClarity: number;
-      emotionalEnergy: number;
-    };
-  };
+  clip: ClipItem;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   onTogglePlatform: (id: string, platform: string) => void;

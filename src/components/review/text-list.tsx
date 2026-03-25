@@ -20,17 +20,71 @@ interface TextListProps {
   onSelect: (id: string) => void;
 }
 
-const typeIcons: Record<string, string> = {
-  linkedin_post: 'linkedin',
-  x_thread: 'x',
-  newsletter_section: 'mail',
-  summary: 'summary',
-  chapter_markers: 'chapters',
-  blog_draft: 'blog',
-  key_insight: 'insight',
-  notable_quote: 'quote',
-  custom: 'custom',
-};
+function TextTypeIcon({ type }: { type: string }) {
+  const iconClass = 'shrink-0';
+  switch (type) {
+    case 'linkedin_post':
+      return <PlatformIcon platform="linkedin" size={16} className={cn(iconClass, 'text-[#5046e5]')} />;
+    case 'x_thread':
+      return <PlatformIcon platform="x" size={16} className={cn(iconClass, 'text-[#1a1a1a]')} />;
+    case 'newsletter_section':
+      return (
+        <svg className={cn(iconClass, 'text-[#5046e5]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <polyline points="22 6 12 13 2 6" />
+        </svg>
+      );
+    case 'key_insight':
+      return (
+        <svg className={cn(iconClass, 'text-[#d97706]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        </svg>
+      );
+    case 'notable_quote':
+      return (
+        <svg className={cn(iconClass, 'text-[#059669]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z" />
+          <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z" />
+        </svg>
+      );
+    case 'summary':
+      return (
+        <svg className={cn(iconClass, 'text-[#5046e5]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+      );
+    case 'chapter_markers':
+      return (
+        <svg className={cn(iconClass, 'text-[#7c3aed]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <line x1="8" y1="6" x2="21" y2="6" />
+          <line x1="8" y1="12" x2="21" y2="12" />
+          <line x1="8" y1="18" x2="21" y2="18" />
+          <line x1="3" y1="6" x2="3.01" y2="6" />
+          <line x1="3" y1="12" x2="3.01" y2="12" />
+          <line x1="3" y1="18" x2="3.01" y2="18" />
+        </svg>
+      );
+    case 'blog_draft':
+      return (
+        <svg className={cn(iconClass, 'text-[#0891b2]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+      );
+    default:
+      return (
+        <svg className={cn(iconClass, 'text-[#a09e96]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <polyline points="4 7 4 4 20 4 20 7" />
+          <line x1="9" y1="20" x2="15" y2="20" />
+          <line x1="12" y1="4" x2="12" y2="20" />
+        </svg>
+      );
+  }
+}
 
 export function TextList({ items, selectedId, onSelect }: TextListProps) {
   if (items.length === 0) {
@@ -45,7 +99,6 @@ export function TextList({ items, selectedId, onSelect }: TextListProps) {
     <div className="overflow-auto p-3">
       {items.map((item) => {
         const selected = selectedId === item.id;
-        const iconPlatform = typeIcons[item.type] ?? 'custom';
 
         return (
           <div
@@ -60,28 +113,7 @@ export function TextList({ items, selectedId, onSelect }: TextListProps) {
           >
             {/* Header */}
             <div className="mb-2 flex items-center gap-2">
-              {(iconPlatform === 'linkedin' || iconPlatform === 'x') && (
-                <PlatformIcon platform={iconPlatform} size={16} className="text-[#5046e5]" />
-              )}
-              {iconPlatform === 'mail' && (
-                <svg className="text-[#5046e5]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22 6 12 13 2 6" />
-                </svg>
-              )}
-              {iconPlatform === 'insight' && (
-                <svg className="text-[#d97706]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-              )}
-              {iconPlatform === 'quote' && (
-                <svg className="text-[#059669]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z" />
-                  <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z" />
-                </svg>
-              )}
+              <TextTypeIcon type={item.type} />
               <span className="text-[13px] font-bold text-[#1a1a1a]">{item.label}</span>
               <div className="flex-1" />
               <StatusDot status={item.status} />
@@ -112,27 +144,54 @@ import { Badge } from '@/components/ui/badge';
 interface TextDetailProps {
   item: TextItem;
   onRefine: (id: string, instruction: string) => Promise<string>;
+  onSave: (id: string, content: string) => Promise<void>;
   onCopy: (content: string) => void;
   onApprove: (id: string) => void;
 }
 
-export function TextDetail({ item, onRefine, onCopy, onApprove }: TextDetailProps) {
+/** Read-only types that get richer rendering instead of a textarea. */
+const READ_ONLY_TYPES = new Set(['key_insight', 'notable_quote', 'chapter_markers']);
+
+export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDetailProps) {
   const [content, setContent] = useState(item.content);
   const [isRefining, setIsRefining] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [refineInput, setRefineInput] = useState('');
   const [showRefine, setShowRefine] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [refineError, setRefineError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+
+  const isReadOnly = READ_ONLY_TYPES.has(item.type);
+  const isDirty = content !== item.content;
 
   const handleRefine = async () => {
     if (!refineInput.trim()) return;
     setIsRefining(true);
+    setRefineError(null);
     try {
       const refined = await onRefine(item.id, refineInput);
       setContent(refined);
       setRefineInput('');
       setShowRefine(false);
+    } catch (err) {
+      setRefineError(err instanceof Error ? err.message : 'Refinement failed. Try again.');
     } finally {
       setIsRefining(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveStatus('idle');
+    try {
+      await onSave(item.id, content);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch {
+      setSaveStatus('error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -142,6 +201,162 @@ export function TextDetail({ item, onRefine, onCopy, onApprove }: TextDetailProp
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Rich rendering for insights
+  if (item.type === 'key_insight') {
+    return (
+      <div className="p-7">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#d97706]/10">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round">
+              <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-bold tracking-tight">Key Insight</h3>
+          <div className="flex-1" />
+          <Badge variant="amber">Insight</Badge>
+        </div>
+        <div className="mb-5 rounded-2xl border border-[#d97706]/20 bg-[#d97706]/[0.03] p-5">
+          <p className="text-sm leading-relaxed text-[#1a1a1a]">{item.content}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="md" onClick={handleCopy}>
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+          <Button
+            variant="accent-outline"
+            size="md"
+            onClick={() => onApprove(item.id)}
+            disabled={item.status === 'approved'}
+          >
+            {item.status === 'approved' ? 'Approved' : 'Approve'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Rich rendering for quotes
+  if (item.type === 'notable_quote') {
+    return (
+      <div className="p-7">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#059669]/10">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round">
+              <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z" />
+              <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-bold tracking-tight">Notable Quote</h3>
+          <div className="flex-1" />
+          <Badge variant="green">Quote</Badge>
+        </div>
+        <blockquote className="mb-5 rounded-2xl border-l-4 border-[#059669] bg-[#059669]/[0.03] py-5 pl-6 pr-5">
+          <p className="text-base font-medium italic leading-relaxed text-[#1a1a1a]">
+            &ldquo;{item.content}&rdquo;
+          </p>
+        </blockquote>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="md" onClick={handleCopy}>
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+          <Button
+            variant="accent-outline"
+            size="md"
+            onClick={() => onApprove(item.id)}
+            disabled={item.status === 'approved'}
+          >
+            {item.status === 'approved' ? 'Approved' : 'Approve'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Rich rendering for chapter markers
+  if (item.type === 'chapter_markers') {
+    const chapters = item.content.split('\n').filter((line) => line.trim());
+    return (
+      <div className="p-7">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#7c3aed]/10">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round">
+              <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
+              <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-bold tracking-tight">Chapter Markers</h3>
+          <div className="flex-1" />
+          <Badge variant="default">{chapters.length} chapters</Badge>
+        </div>
+        <div className="mb-5 rounded-2xl border border-[#e4e2dd] bg-white p-1">
+          {chapters.map((line, i) => {
+            const spaceIdx = line.indexOf(' ');
+            const timestamp = spaceIdx > 0 ? line.slice(0, spaceIdx) : '';
+            const title = spaceIdx > 0 ? line.slice(spaceIdx + 1) : line;
+            return (
+              <div
+                key={i}
+                className={cn(
+                  'flex items-center gap-3 rounded-xl px-4 py-2.5',
+                  i % 2 === 0 ? 'bg-[#f6f5f2]' : 'bg-white',
+                )}
+              >
+                <span className="shrink-0 font-mono text-xs font-semibold text-[#5046e5]">{timestamp}</span>
+                <span className="text-sm text-[#1a1a1a]">{title}</span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="md" onClick={handleCopy}>
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Rich rendering for summary
+  if (item.type === 'summary') {
+    return (
+      <div className="p-7">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#5046e5]/10">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5046e5" strokeWidth="2" strokeLinecap="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-bold tracking-tight">Summary</h3>
+          <div className="flex-1" />
+          <Badge variant="default">{item.wordCount} words</Badge>
+        </div>
+        <div className="mb-5 rounded-2xl border border-[#e4e2dd] bg-white p-5">
+          {item.content.split('\n\n').map((paragraph, i) => (
+            <p key={i} className={cn('text-sm leading-relaxed text-[#1a1a1a]', i > 0 && 'mt-3')}>
+              {paragraph}
+            </p>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="md" onClick={handleCopy}>
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+          <Button
+            variant="accent-outline"
+            size="md"
+            onClick={() => onApprove(item.id)}
+            disabled={item.status === 'approved'}
+          >
+            {item.status === 'approved' ? 'Approved' : 'Approve'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Default editable rendering for social posts, newsletters, blog drafts, etc.
   return (
     <div className="p-7">
       {/* Header */}
@@ -149,15 +364,35 @@ export function TextDetail({ item, onRefine, onCopy, onApprove }: TextDetailProp
         <h3 className="text-lg font-bold tracking-tight">{item.label}</h3>
         <div className="flex-1" />
         <Badge variant="default">{item.wordCount} words</Badge>
+        {item.status === 'approved' && <Badge variant="green">Approved</Badge>}
       </div>
 
       {/* Editable content */}
       <textarea
         value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="mb-5 min-h-[240px] w-full rounded-2xl border border-[#e4e2dd] bg-white p-5 text-sm leading-relaxed text-[#1a1a1a] shadow-sm outline-none focus:border-[#5046e5]/40"
+        onChange={(e) => { setContent(e.target.value); setSaveStatus('idle'); }}
+        className="mb-1 min-h-[240px] w-full rounded-2xl border border-[#e4e2dd] bg-white p-5 text-sm leading-relaxed text-[#1a1a1a] shadow-sm outline-none focus:border-[#5046e5]/40"
         style={{ resize: 'vertical' }}
       />
+
+      {/* Dirty indicator + save */}
+      <div className="mb-4 flex items-center gap-2">
+        {isDirty && (
+          <span className="text-[11px] text-[#d97706]">Unsaved changes</span>
+        )}
+        {saveStatus === 'saved' && (
+          <span className="text-[11px] text-[#16a34a]">Saved</span>
+        )}
+        {saveStatus === 'error' && (
+          <span className="text-[11px] text-[#dc2626]">Save failed</span>
+        )}
+        <div className="flex-1" />
+        {isDirty && (
+          <Button size="sm" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save'}
+          </Button>
+        )}
+      </div>
 
       {/* Refine with AI */}
       {showRefine ? (
@@ -174,9 +409,12 @@ export function TextDetail({ item, onRefine, onCopy, onApprove }: TextDetailProp
               disabled={isRefining}
             />
             <Button size="sm" onClick={handleRefine} disabled={!refineInput.trim() || isRefining}>
-              {isRefining ? 'Refining…' : 'Refine'}
+              {isRefining ? 'Refining...' : 'Refine'}
             </Button>
           </div>
+          {refineError && (
+            <p className="mt-2 text-xs text-[#dc2626]">{refineError}</p>
+          )}
           <div className="mt-2 flex flex-wrap gap-1.5">
             {['Make it shorter', 'Stronger hook', 'More professional', 'More casual'].map((q) => (
               <button
@@ -204,17 +442,15 @@ export function TextDetail({ item, onRefine, onCopy, onApprove }: TextDetailProp
           {showRefine ? 'Close' : 'Refine with AI'}
         </Button>
         <Button variant="secondary" size="md" onClick={handleCopy}>
-          {copied ? '✓ Copied' : 'Copy'}
+          {copied ? 'Copied' : 'Copy'}
         </Button>
         <Button
           variant="accent-outline"
           size="md"
           onClick={() => onApprove(item.id)}
+          disabled={item.status === 'approved'}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-          Schedule
+          {item.status === 'approved' ? 'Approved' : 'Approve'}
         </Button>
       </div>
     </div>

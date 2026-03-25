@@ -18,7 +18,7 @@ Headless multi-platform content repurposing engine for solo creators. Takes long
 - **Database:** Supabase (PostgreSQL + Auth + Storage)
 - **ORM:** Prisma
 - **Queue:** BullMQ + Redis
-- **LLM:** Claude API (Anthropic)
+- **LLM:** Claude API (Anthropic) · Gemini Flash (dev) · Mock (zero-cost)
 - **Transcription:** AssemblyAI (default) or Whisper (Modal.com)
 - **Video:** FFmpeg + MediaPipe face detection
 - **Billing:** Stripe
@@ -166,6 +166,56 @@ npm run typecheck        # TypeScript strict check
 | 3 | Built | Dashboard UI (jobs, review queue, settings) |
 | 4 | Built | Scheduling, extended inputs, custom prompts, export |
 | 5 | Built | API keys, Stripe billing, onboarding, landing page |
+
+## Cost Control Layer
+
+Built-in guardrails to keep API costs predictable during development and production.
+
+### Provider Modes
+
+Set `LLM_PROVIDER_MODE` in `.env.local`:
+
+| Mode | Provider | Cost | Use Case |
+|------|----------|------|----------|
+| `mock` | Fixture data | Free | UI development, CI |
+| `gemini-dev` | Google Gemini Flash | Free tier (15 RPM) | Feature testing, integration |
+| `anthropic-prod` | Claude Sonnet | ~$3/1K jobs | Production |
+
+### Generation Toggles
+
+Users choose which outputs to generate per job — skip what you don't need:
+
+- Clips (on/off)
+- LinkedIn posts, X threads, newsletter sections (individual toggles)
+- Insights, quotes, summary, chapter markers (individual toggles)
+
+### Transcript & Analysis Caching
+
+- Content-hash dedupe: same YouTube URL won't re-transcribe
+- Analysis dedupe: existing clips/texts are reused unless `FORCE_REANALYZE=true`
+- Stage-level rerun: `POST /api/v1/jobs/:id/rerun` with `stage: transcribe | analyze | render`
+
+### Cost Estimation
+
+`GET /api/v1/jobs/estimate` returns estimated cost before job submission based on source duration and selected outputs.
+
+### Usage Guardrails
+
+- Daily API cost caps (configurable via `DAILY_API_COST_CAP_USD`)
+- Per-job cost warnings for expensive operations
+- Token tracking on all LLM calls
+
+### Env Flags
+
+```
+LLM_PROVIDER_MODE=mock|gemini-dev|anthropic-prod
+MOCK_AI=true|false
+DEV_NO_EXTERNAL_APIS=true|false
+GEMINI_API_KEY=your_key_here
+ANTHROPIC_API_KEY=your_key_here
+FORCE_REANALYZE=true|false
+DAILY_API_COST_CAP_USD=5.00
+```
 
 **Next step:** Connect real environment variables and test the vertical slice end-to-end.
 

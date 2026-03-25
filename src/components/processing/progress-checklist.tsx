@@ -248,14 +248,30 @@ export function ProgressChecklist({ jobId, sourceTitle, isTextOnly, initialStatu
         {/* Error state */}
         {error && (
           <div className="mt-6">
-            <div className="mb-4 rounded-xl border border-[#dc2626]/20 bg-[#dc2626]/[0.04] px-4 py-3 text-sm text-[#dc2626]">
+            <div className="mb-4 rounded-xl border border-[#dc2626]/20 bg-[#dc2626]/[0.04] px-4 py-3 text-left text-sm text-[#dc2626]">
               {error}
             </div>
             <button
-              onClick={() => window.location.reload()}
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/v1/jobs/${jobId}/retry`, { method: 'POST' });
+                  if (res.ok) {
+                    setError(null);
+                    setProgress({ ingest: 'pending', transcribe: 'pending', analyze: 'pending', render: 'pending' });
+                    setJobStatus('created');
+                    // Reconnect SSE by forcing remount via reload
+                    window.location.reload();
+                  } else {
+                    const data = await res.json();
+                    setError(data.error ?? 'Retry failed');
+                  }
+                } catch {
+                  setError('Network error — could not retry');
+                }
+              }}
               className="rounded-xl border border-[#e4e2dd] bg-white px-6 py-2.5 text-sm font-bold shadow-sm hover:shadow-md"
             >
-              Retry
+              Retry job
             </button>
           </div>
         )}

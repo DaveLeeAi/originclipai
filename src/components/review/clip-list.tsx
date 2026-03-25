@@ -17,6 +17,16 @@ export interface ClipItem {
   status: 'review' | 'approved' | 'rejected';
   platforms: string[];
   renderStatus: string;
+  hook?: string;
+  transcriptExcerpt?: string;
+  scoreFactors?: {
+    coherence: number;
+    hookStrength: number;
+    topicClarity: number;
+    emotionalEnergy: number;
+  };
+  socialCaption?: string;
+  hashtags?: string[];
 }
 
 interface ClipListProps {

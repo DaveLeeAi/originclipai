@@ -139,6 +139,12 @@ model Job {
   minutesConsumed       Float     @default(0) @map("minutes_consumed")
   processingStartedAt   DateTime? @map("processing_started_at")
   processingCompletedAt DateTime? @map("processing_completed_at")
+  // Cost control fields
+  generationOptions     Json      @default("{}") @map("generation_options")
+  providerMode          String    @default("anthropic-prod") @map("provider_mode")
+  contentHash           String?   @map("content_hash")
+  estimatedCost         Float?    @map("estimated_cost")
+  actualLlmCalls        Int       @default(0) @map("actual_llm_calls")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
 
@@ -150,6 +156,7 @@ model Job {
   @@index([userId])
   @@index([status])
   @@index([userId, createdAt(sort: Desc)])
+  @@index([contentHash])
   @@map("jobs")
 }
 
