@@ -1,141 +1,101 @@
-# BUILD_PLAN.md — v2 REALITY CHECK (March 2026)
+# BUILD_PLAN.md — v2 REALITY CHECK (March 2026, UPDATED)
 
-> This replaces the original BUILD_PLAN.md which described a 16-week plan.
-> This document reflects what's actually built, what's broken, and what to build next.
+> Reflects actual state + UI redesign plan.
+> Sprints 1-2 fix stability. Sprint 3 polishes. Sprint 4 rebuilds the UI.
 
 ---
 
 ## Honest Status
 
-### What's Built (code exists and runs)
+### What Works
 
-| System | Status | Notes |
-|--------|--------|-------|
-| Auth (sign-up, sign-in, OAuth, forgot pw) | ✅ Working | Profile auto-creates on first dashboard visit |
-| Database schema (Prisma) | ✅ Working | 9 models, all deployed to Supabase |
-| Job creation (article URLs) | ✅ Working | YouTube URLs need yt-dlp installed |
-| Ingest worker | ✅ Working | Articles: HTTP fetch + HTML strip. YouTube: needs yt-dlp |
-| Transcribe worker | ⚠️ Untested | AssemblyAI provider exists, never tested with real call |
-| Analyze worker (mock mode) | ✅ Working | Returns fixture data correctly |
-| Analyze worker (Gemini mode) | ❌ Failing | Intermittent failures, missing error isolation |
-| Render worker | ⏸️ Skipped | Intentionally disabled for vertical slice |
-| Review queue UI | ✅ Working | Clips tab, text tab, copy, edit, refine, approve |
-| Progress checklist (SSE) | ✅ Working | Step-by-step with real-time updates |
-| Job list with filters | ✅ Working | Status + source type filters |
-| Billing UI | ✅ Built | Not wired to real Stripe (no keys configured) |
-| Social scheduling | ✅ Built | Not wired to real OAuth (no keys configured) |
-| Export worker | ✅ Built | Not tested end-to-end |
-| Landing page | ✅ Built | Basic, no marketing layout |
-| Pricing page | ✅ Built | |
-| Mock mode | ✅ Working | MOCK_AI=true for $0 development |
-| Gemini provider | ⚠️ Partial | Connected but fails intermittently |
-| Cost controls | ✅ Built | Generation toggles, caching, daily caps |
+| System | Status |
+|--------|--------|
+| Auth (sign-up, sign-in, forgot pw) | ✅ Working |
+| Database schema (Prisma, 9 models) | ✅ Working |
+| Job creation (article URLs) | ✅ Working |
+| Ingest worker | ✅ Working |
+| Analyze worker (mock mode) | ✅ Working |
+| Analyze worker (Gemini) — error isolation | ✅ Implemented |
+| Review queue UI | ✅ Working |
+| Job delete + toast + confirm dialog | ✅ Working |
+| Settings (caption style, account name) | ✅ Working |
+| Mock mode (MOCK_AI=true) | ✅ Working |
+| Gemini provider (2.5-flash, timeout, retry) | ✅ Hardened |
 
 ### What's Broken
 
-| Issue | Severity | Root Cause |
-|-------|----------|------------|
-| Gemini analyze calls fail ~50% of time | CRITICAL | No error isolation — one failed LLM call kills entire job |
-| No job delete | HIGH | No DELETE endpoint, no UI button |
-| Settings don't save | HIGH | Inputs exist but no onChange/save handlers |
-| No toast notifications | HIGH | Actions succeed silently or fail silently |
-| No confirmation dialogs | MEDIUM | Delete/cancel have no safety net |
-| Build OOM on production | MEDIUM | Needs NODE_OPTIONS=--max-old-space-size=4096 |
-| Processing speed (articles) | MEDIUM | Unnecessary Supabase Storage round-trip for text content |
-
-### What's Not Built Yet (and shouldn't be until above is fixed)
-
-- YouTube URL end-to-end (needs yt-dlp + FFmpeg)
-- Video rendering (FFmpeg pipeline)
-- Social OAuth connections
-- Stripe billing (real payments)
-- Email notifications
+| Issue | Severity |
+|-------|----------|
+| 15 TypeScript errors | HIGH |
+| Worker crashes mid-job (Redis disconnect) | CRITICAL |
+| Dual auth conflict (schedule/billing routes) | HIGH |
+| Source type cards decorative | MEDIUM |
+| Connections/Billing pages crash | MEDIUM |
+| UI looks like a prototype | CRITICAL |
 
 ---
 
-## Next Sprint: Reliability + Essentials (1-2 days)
+## Sprint 1: Stability (1 day)
 
-Priority order. Do not reorder. Each task must be committed separately.
+1. Fix 15 TypeScript errors
+2. Fix dual auth (migrate schedule + billing routes to Supabase auth)
+3. Wire source type cards or add Coming Soon states
+4. Coming-soon states for Connections and Billing
+5. Add Billing to sidebar nav
+6. Worker crash diagnostics
 
-### Sprint 1: Make Gemini calls reliable
+## Sprint 2: Reliability (1 day)
 
-**Task 1.1: Error isolation in analyze handler**
-- Wrap every LLM call in individual try-catch
-- Failed calls log error + continue with remaining calls
-- Partial results saved to database
-- Job marked complete with warnings, not failed
+1. Fix worker crashes (Redis connection, memory, graceful shutdown)
+2. Test article pipeline end-to-end in gemini-dev
+3. Verify partial results on LLM failures
+4. Test settings persistence
 
-**Task 1.2: Gemini provider hardening**
-- Add 60-second timeout via AbortController
-- Log full request/response for debugging
-- Handle Gemini rate limits (429) with backoff
-- Handle malformed JSON with cleaner retry logic
+## Sprint 3: Polish (1 day)
 
-**Task 1.3: Test with real Gemini call**
-- Process one article URL in gemini-dev mode
-- Verify at least some text outputs appear in review queue
-- Document any remaining failures
+1. Processing elapsed time
+2. Navigate-away messaging
+3. Background job completion toast
+4. Sidebar active route highlighting
+5. Jobs list pagination
 
-### Sprint 2: Missing UI essentials
+---
 
-**Task 2.1: Toast notification system**
-- Create toast provider + useToast hook
-- Wire to all existing actions (copy, save, approve, refine)
+## Sprint 4: UI Redesign (3-5 days)
 
-**Task 2.2: Job delete**
-- DELETE /api/v1/jobs/:id endpoint
-- Three-dot menu on job cards
-- Confirmation dialog
-- Toast with undo
+> Read DESIGN-SYSTEM-v2.md before any task here.
 
-**Task 2.3: Cancel job**
-- PATCH /api/v1/jobs/:id with cancel status
-- Button in three-dot menu (only for processing jobs)
+### 4.1 Foundation (half day)
+Install Inter + Geist Mono, CSS vars in globals.css (light+dark), update tailwind.config.ts, `npx shadcn-ui@latest init`, add core components, install Lucide React + Framer Motion, dark mode toggle.
 
-**Task 2.4: Functional settings**
-- Wire onChange to all settings inputs
-- PATCH /api/v1/settings endpoint
-- Save on change with toast confirmation
+### 4.2 Dashboard / Job List (1 day)
+Rebuild AppShell (collapsible sidebar, Lucide icons, new tokens). Rebuild JobsList (row-card layout, status dots, output counts). Filter chips. Cmd+K search. Skeleton loading. Keep all existing functionality.
 
-**Task 2.5: Empty states**
-- Jobs list empty state with CTA
-- Review page empty clip/text states with explanations
+### 4.3 Processing Status (half day)
+Multi-step stepper (Framer Motion animated dots). Thin progress bar. Substep messages. Background indicator in sidebar. Toast on completion.
 
-### Sprint 3: Polish (only after Sprint 1-2 are done)
+### 4.4 Review Queue (1-2 days)
+Three-panel layout. Left: output list by type. Center: platform mockup previews. Score rings. Keyboard shortcuts (A/E/R). Batch actions bar. Edit panel slides from right. Staggered list animation.
 
-- Dropdown menu component
-- Checkbox + bulk select on job cards
-- Batch delete failed jobs
-- Processing elapsed time display
-- "Navigate away" messaging during processing
-- Toast when background job completes
-- Sidebar active route highlighting
-- Pagination for jobs list (replace take: 50)
+### 4.5 New Job Creation (half day)
+Centered modal. Working source type cards. Auto-populated metadata. Output toggles. Template selector. Advanced settings collapsed.
+
+### 4.6 Settings + Coming Soon (half day)
+Restyle all settings. Connections: disabled with "Coming soon". Billing: plan cards visible, upgrade disabled. API Keys + Templates: restyled, plan-gated.
+
+### 4.7 Landing + Marketing (1 day)
+Rebuild hero, features, pricing, FAQ with new design system. Fix blog links. Restyle nav + footer.
 
 ---
 
 ## Quality Gates
 
-Before declaring any sprint complete:
-
 1. `npx tsc --noEmit` — 0 errors
-2. `npm test` — all tests pass
-3. Manual test: create job with article URL in gemini-dev mode → see text outputs in review
-4. Manual test: delete a job → confirmation dialog → toast → job removed from list
-5. Manual test: all settings inputs save and persist on page reload
-
----
-
-## What NOT to Build Next
-
-Do not build any of these until the above sprints are complete and the vertical slice works reliably with real Gemini calls:
-
-- YouTube URL ingestion (needs yt-dlp + FFmpeg setup)
-- Video rendering pipeline
-- Social OAuth integration
-- Stripe billing integration
-- Marketing page redesign
-- Blog content
-- API documentation
-- Mobile responsiveness
-- Dark mode
+2. `npm test` — all pass
+3. Create job → see outputs in review
+4. Delete job → confirm → toast → removed
+5. Settings save + persist on reload
+6. Dark mode toggle → every page correct
+7. Every button has hover + focus states
+8. Every page has skeleton loading
