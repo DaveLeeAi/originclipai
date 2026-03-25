@@ -21,6 +21,16 @@ analyzeWorker.on("completed", (job) => {
   console.log(`[analyze] Job ${job.id} completed`);
 });
 
+analyzeWorker.on("error", (error) => {
+  // BullMQ worker-level errors — typically Redis connection issues.
+  // "The service is no longer running" is emitted here when Redis disconnects mid-job.
+  console.error(`[analyze] Worker error (Redis connection likely lost):`, error.message);
+  const mem = process.memoryUsage();
+  console.error(
+    `[analyze] Worker error memory state: RSS=${Math.round(mem.rss / 1024 / 1024)}MB, Heap=${Math.round(mem.heapUsed / 1024 / 1024)}MB`,
+  );
+});
+
 analyzeWorker.on("failed", async (job, error) => {
   console.error(`[analyze] Job ${job?.id} failed:`, error.message);
 

@@ -32,6 +32,13 @@ import {
 
 const TEXT_ONLY_SOURCES = ["article_url", "pdf_upload"];
 
+function logMemory(label: string): void {
+  const mem = process.memoryUsage();
+  console.log(
+    `[analyze] Memory (${label}): RSS=${Math.round(mem.rss / 1024 / 1024)}MB, Heap=${Math.round(mem.heapUsed / 1024 / 1024)}/${Math.round(mem.heapTotal / 1024 / 1024)}MB, External=${Math.round(mem.external / 1024 / 1024)}MB`,
+  );
+}
+
 /**
  * Analyze handler — runs LLM-powered clip detection and text generation.
  *
@@ -40,8 +47,10 @@ const TEXT_ONLY_SOURCES = ["article_url", "pdf_upload"];
  */
 export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
   const { jobId, sourceType } = data;
+  const startTime = Date.now();
 
   try {
+    logMemory(`start job=${jobId}`);
     await updateJobStatus(jobId, "analyzing");
     await updateJobProgress(jobId, "analyze", "running");
 
@@ -186,6 +195,8 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
           where: { id: jobId },
           data: { clipCount: clipResult.clips.length },
         });
+
+        logMemory(`after clip detection job=${jobId}`);
       } else {
         console.log(`[analyze] Clips disabled for job ${jobId} — skipping clip detection`);
       }
@@ -291,6 +302,8 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
     ];
 
     const [insightsResult, summaryResult, textResults] = await Promise.all(parallelTasks);
+
+    logMemory(`after parallel LLM calls job=${jobId}`);
 
     // Store all text outputs
     let textSortOrder = 0;
@@ -602,7 +615,12 @@ export async function handleAnalyzeJob(data: AnalyzeJobData): Promise<void> {
         sourceTitle: job.sourceTitle,
       }).catch(() => {});
     }
+
+    logMemory(`end job=${jobId}`);
+    console.log(`[analyze] Job ${jobId} completed in ${Math.round((Date.now() - startTime) / 1000)}s`);
   } catch (error) {
+    logMemory(`error job=${jobId}`);
+    console.error(`[analyze] Job ${jobId} failed after ${Math.round((Date.now() - startTime) / 1000)}s`);
     await updateJobProgress(jobId, "analyze", "error").catch(() => {});
     await updateJobStatus(
       jobId,
