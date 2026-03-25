@@ -341,7 +341,7 @@ export function JobsList({ jobs }: JobsListProps) {
   const [cancellingIds, setCancellingIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const router = useRouter();
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   const toggleSelected = useCallback((e: React.MouseEvent, jobId: string) => {
     e.preventDefault();
@@ -444,10 +444,10 @@ export function JobsList({ jobs }: JobsListProps) {
       return next;
     });
     if (success) {
-      showToast('Job cancelled');
+      toast.success('Job cancelled');
       router.refresh();
     } else {
-      showToast('Failed to cancel job', 'error');
+      toast.error('Failed to cancel job');
     }
   }
 
@@ -467,10 +467,10 @@ export function JobsList({ jobs }: JobsListProps) {
         next.delete(job.id);
         return next;
       });
-      showToast('Job deleted');
+      toast.success('Job deleted');
       router.refresh();
     } else {
-      showToast('Failed to delete job', 'error');
+      toast.error('Failed to delete job');
       setDeletingIds((prev) => {
         const next = new Set(prev);
         next.delete(job.id);
@@ -499,7 +499,7 @@ export function JobsList({ jobs }: JobsListProps) {
       return next;
     });
 
-    showToast(`${count} failed job${count === 1 ? '' : 's'} deleted`);
+    toast.success(`${count} failed job${count === 1 ? '' : 's'} deleted`);
     router.refresh();
   }
 
@@ -519,7 +519,7 @@ export function JobsList({ jobs }: JobsListProps) {
     await Promise.all(ids.map((id) => deleteJob(id)));
 
     setSelectedIds(new Set());
-    showToast(`${ids.length} job${ids.length === 1 ? '' : 's'} deleted`);
+    toast.success(`${ids.length} job${ids.length === 1 ? '' : 's'} deleted`);
     router.refresh();
   }
 

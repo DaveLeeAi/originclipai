@@ -9,7 +9,7 @@ export default function SettingsPage() {
   const [captionStyle, setCaptionStyle] = useState<CaptionStyle>('karaoke');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const initialLoadDone = useRef(false);
 
   // Load current settings
@@ -42,12 +42,12 @@ export default function SettingsPage() {
         body: JSON.stringify({ [field]: value }),
       });
       if (res.ok) {
-        showToast('Saved');
+        toast.success('Setting saved');
       } else {
-        showToast('Failed to save', 'error');
+        toast.error('Failed to save setting');
       }
     } catch {
-      showToast('Failed to save', 'error');
+      toast.error('Failed to save setting');
     } finally {
       setSaving(false);
     }
