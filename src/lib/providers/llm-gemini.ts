@@ -62,7 +62,22 @@ export class GeminiLLMProvider implements LLMProvider {
       body.systemInstruction = systemInstruction;
     }
 
-    // 60-second timeout for Gemini free tier
+    // Log request details
+    const inputChars = messages.reduce((sum, m) => sum + m.content.length, 0);
+    console.log(
+      `[GEMINI] ${model} — request: ${messages.length} messages, ~${inputChars} input chars, temp=${options?.temperature ?? 0.3}`,
+    );
+
+    return this.fetchWithRetry(url, body, model);
+  }
+
+  /** Fetch with 60s timeout and automatic 429 rate-limit retry (up to 1 retry after 5s). */
+  private async fetchWithRetry(
+    url: string,
+    body: Record<string, unknown>,
+    model: string,
+    attempt = 1,
+  ): Promise<LLMResponse> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60_000);
 
@@ -89,6 +104,15 @@ export class GeminiLLMProvider implements LLMProvider {
       `[GEMINI] ${model} — status: ${response.status}, body preview: ${responseText.slice(0, 200)}`,
     );
 
+    // Handle 429 rate limit with one retry after 5 seconds
+    if (response.status === 429 && attempt <= 1) {
+      console.warn(
+        `[GEMINI] ${model} — rate limited (429), retrying in 5s (attempt ${attempt + 1})`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 5_000));
+      return this.fetchWithRetry(url, body, model, attempt + 1);
+    }
+
     if (!response.ok) {
       throw new Error(`Gemini API error (${response.status}): ${responseText}`);
     }
@@ -108,7 +132,7 @@ export class GeminiLLMProvider implements LLMProvider {
     const outputTokens = data.usageMetadata?.candidatesTokenCount ?? 0;
 
     console.log(
-      `[GEMINI] ${model} — input: ${inputTokens}, output: ${outputTokens}`,
+      `[GEMINI] ${model} — input: ${inputTokens} tokens, output: ${outputTokens} tokens`,
     );
 
     return {
