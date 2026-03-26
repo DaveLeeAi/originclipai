@@ -1,9 +1,11 @@
-// src/app/(dashboard)/page.tsx
+// src/app/(dashboard)/jobs/page.tsx
 
 import { getUser } from '@/lib/auth/server';
 import { db } from '@/lib/db/client';
 import { JobsList } from '@/components/jobs/jobs-list';
 import Link from 'next/link';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default async function DashboardPage() {
   const user = await getUser();
@@ -35,14 +37,24 @@ export default async function DashboardPage() {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Jobs</h1>
-          <p className="text-sm text-[#6b6960]">{jobs.length} total</p>
+          <h1
+            className="text-2xl font-semibold tracking-tight"
+            style={{ color: 'var(--text-primary)', lineHeight: '1.25', letterSpacing: '-0.01em' }}
+          >
+            Jobs
+          </h1>
+          <p
+            className="mt-0.5 text-[13px]"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {jobs.length} total
+          </p>
         </div>
-        <Link
-          href="/new"
-          className="inline-flex items-center gap-2 rounded-[10px] bg-gradient-to-r from-[#5046e5] to-[#7c3aed] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/25 transition hover:shadow-lg"
-        >
-          + New job
+        <Link href="/new">
+          <Button size="md">
+            <Plus size={16} strokeWidth={2} />
+            New job
+          </Button>
         </Link>
       </div>
 
