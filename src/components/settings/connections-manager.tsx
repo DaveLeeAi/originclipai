@@ -27,7 +27,7 @@ const PLATFORMS = [
     key: 'youtube',
     name: 'YouTube',
     description: 'Upload Shorts directly to your channel',
-    color: '#dc2626',
+    color: 'var(--error)',
   },
   {
     key: 'tiktok',
@@ -45,7 +45,7 @@ const PLATFORMS = [
     key: 'x',
     name: 'X / Twitter',
     description: 'Post tweets and threads',
-    color: '#1a1a1a',
+    color: 'var(--text-primary)',
   },
 ];
 
@@ -55,11 +55,11 @@ export function ConnectionsManager({
   return (
     <div className="space-y-3">
       {/* Coming soon banner */}
-      <div className="rounded-xl border border-[#5046e5]/20 bg-[#5046e5]/[0.04] px-4 py-3">
-        <p className="text-sm font-medium text-[#5046e5]">
+      <div className="rounded-xl border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/[0.04] px-4 py-3">
+        <p className="text-sm font-medium text-[var(--accent-primary)]">
           OAuth integration launching with v1
         </p>
-        <p className="mt-0.5 text-xs text-[#6b6960]">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Platform connections will be available when scheduling ships. Your accounts below are ready to connect.
         </p>
       </div>
@@ -85,14 +85,14 @@ export function ConnectionsManager({
               {connection ? (
                 <div className="flex items-center gap-2 text-xs">
                   <StatusDot status={connection.isActive ? 'approved' : 'failed'} />
-                  <span className={connection.isActive ? 'text-[#6b6960]' : 'text-[#dc2626]'}>
+                  <span className={connection.isActive ? 'text-muted-foreground' : 'text-[var(--error)]'}>
                     {connection.isActive
                       ? `Connected as @${connection.platformUsername}`
                       : connection.error ?? 'Connection broken'}
                   </span>
                 </div>
               ) : (
-                <div className="text-xs text-[#a09e96]">{platform.description}</div>
+                <div className="text-xs text-[var(--text-tertiary)]">{platform.description}</div>
               )}
             </div>
 

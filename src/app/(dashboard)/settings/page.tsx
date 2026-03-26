@@ -131,12 +131,12 @@ export default function SettingsPage() {
       <div className="mb-6 flex items-center gap-3">
         <h1 className="text-xl font-bold tracking-tight">Settings</h1>
         {saving && (
-          <span className="text-xs text-[#a09e96]">Saving...</span>
+          <span className="text-xs text-[var(--text-tertiary)]">Saving...</span>
         )}
       </div>
       <div className="max-w-2xl space-y-6">
         {/* Account */}
-        <div className="rounded-2xl border border-[#e4e2dd] bg-white p-5">
+        <div className="rounded-2xl border border-border bg-white p-5">
           <h2 className="mb-4 text-sm font-bold">Account</h2>
           {user ? (
             <div className="space-y-4">
@@ -148,7 +148,7 @@ export default function SettingsPage() {
                     className="h-12 w-12 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#5046e5] to-[#7c3aed]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-primary)]">
                     <span className="text-base font-bold text-white">
                       {(user.fullName?.[0] || user.email?.[0] || 'U').toUpperCase()}
                     </span>
@@ -162,49 +162,49 @@ export default function SettingsPage() {
                         value={nameInput}
                         onChange={(e) => setNameInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateName(); if (e.key === 'Escape') setEditingName(false); }}
-                        className="rounded-lg border border-[#e4e2dd] px-3 py-1.5 text-sm outline-none focus:border-[#5046e5]"
+                        className="rounded-lg border border-border px-3 py-1.5 text-sm outline-none focus:border-[var(--accent-primary)]"
                         placeholder="Your name"
                         autoFocus
                       />
                       <button
                         onClick={handleUpdateName}
                         disabled={saving}
-                        className="rounded-lg bg-[#5046e5] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#4038c7] disabled:opacity-50"
+                        className="rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#4038c7] disabled:opacity-50"
                       >
                         Save
                       </button>
                       <button
                         onClick={() => { setEditingName(false); setNameInput(user.fullName); }}
-                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#6b6960] hover:bg-[#f6f5f2]"
+                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-background"
                       >
                         Cancel
                       </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-[#1a1a1a]">
+                      <p className="text-sm font-semibold text-foreground">
                         {user.fullName || 'No name set'}
                       </p>
                       <button
                         onClick={() => setEditingName(true)}
-                        className="text-[10px] font-medium text-[#5046e5] hover:underline"
+                        className="text-[10px] font-medium text-[var(--accent-primary)] hover:underline"
                       >
                         Edit
                       </button>
                     </div>
                   )}
-                  <p className="text-xs text-[#6b6960]">{user.email}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs text-[#a09e96]">Email</label>
-                  <p className="text-sm text-[#1a1a1a]">{user.email}</p>
+                  <label className="mb-1 block text-xs text-[var(--text-tertiary)]">Email</label>
+                  <p className="text-sm text-foreground">{user.email}</p>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-[#a09e96]">Member since</label>
-                  <p className="text-sm text-[#1a1a1a]">
+                  <label className="mb-1 block text-xs text-[var(--text-tertiary)]">Member since</label>
+                  <p className="text-sm text-foreground">
                     {new Date(user.createdAt).toLocaleDateString('en-US', {
                       month: 'long',
                       year: 'numeric',
@@ -213,16 +213,16 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 border-t border-[#e4e2dd] pt-4">
+              <div className="flex items-center gap-3 border-t border-border pt-4">
                 <a
                   href="/reset-password"
-                  className="rounded-lg border border-[#e4e2dd] px-3 py-1.5 text-xs font-medium text-[#6b6960] hover:bg-[#f6f5f2]"
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-background"
                 >
                   Change password
                 </a>
                 <button
                   onClick={handleSignOut}
-                  className="rounded-lg border border-[#dc2626]/20 px-3 py-1.5 text-xs font-medium text-[#dc2626] hover:bg-[#dc2626]/5"
+                  className="rounded-lg border border-[var(--error)]/20 px-3 py-1.5 text-xs font-medium text-[var(--error)] hover:bg-[var(--error)]/5"
                 >
                   Sign out
                 </button>
@@ -230,22 +230,22 @@ export default function SettingsPage() {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 animate-pulse rounded-full bg-[#e4e2dd]" />
+              <div className="h-12 w-12 animate-pulse rounded-full bg-[var(--border-default)]" />
               <div className="space-y-2">
-                <div className="h-4 w-32 animate-pulse rounded bg-[#e4e2dd]" />
-                <div className="h-3 w-48 animate-pulse rounded bg-[#e4e2dd]" />
+                <div className="h-4 w-32 animate-pulse rounded bg-[var(--border-default)]" />
+                <div className="h-3 w-48 animate-pulse rounded bg-[var(--border-default)]" />
               </div>
             </div>
           )}
         </div>
 
-        <div className="rounded-2xl border border-[#e4e2dd] bg-white p-5">
+        <div className="rounded-2xl border border-border bg-white p-5">
           <h2 className="mb-3 text-sm font-bold">Default caption style</h2>
           <select
             value={captionStyle}
             onChange={handleCaptionStyleChange}
             disabled={loading}
-            className="w-full max-w-xs rounded-lg border border-[#e4e2dd] px-3 py-2 text-sm outline-none focus:border-[#5046e5] disabled:opacity-50"
+            className="w-full max-w-xs rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-[var(--accent-primary)] disabled:opacity-50"
           >
             <option value="karaoke">Karaoke (word-level highlight)</option>
             <option value="boxed">Boxed (background box)</option>
@@ -254,23 +254,23 @@ export default function SettingsPage() {
             <option value="subtitle">Subtitle (classic)</option>
           </select>
         </div>
-        <div className="rounded-2xl border border-[#e4e2dd] bg-white p-5">
+        <div className="rounded-2xl border border-border bg-white p-5">
           <h2 className="mb-1 text-sm font-bold">Default clip settings</h2>
-          <p className="mb-4 text-xs text-[#a09e96]">
+          <p className="mb-4 text-xs text-[var(--text-tertiary)]">
             Default values — custom settings coming in a future update
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-xl bg-[#f6f5f2] px-4 py-3">
-              <div className="text-xs text-[#a09e96]">Min duration</div>
-              <div className="mt-0.5 text-lg font-bold text-[#1a1a1a]">30<span className="ml-0.5 text-xs font-normal text-[#a09e96]">sec</span></div>
+            <div className="rounded-xl bg-background px-4 py-3">
+              <div className="text-xs text-[var(--text-tertiary)]">Min duration</div>
+              <div className="mt-0.5 text-lg font-bold text-foreground">30<span className="ml-0.5 text-xs font-normal text-[var(--text-tertiary)]">sec</span></div>
             </div>
-            <div className="rounded-xl bg-[#f6f5f2] px-4 py-3">
-              <div className="text-xs text-[#a09e96]">Max duration</div>
-              <div className="mt-0.5 text-lg font-bold text-[#1a1a1a]">90<span className="ml-0.5 text-xs font-normal text-[#a09e96]">sec</span></div>
+            <div className="rounded-xl bg-background px-4 py-3">
+              <div className="text-xs text-[var(--text-tertiary)]">Max duration</div>
+              <div className="mt-0.5 text-lg font-bold text-foreground">90<span className="ml-0.5 text-xs font-normal text-[var(--text-tertiary)]">sec</span></div>
             </div>
-            <div className="rounded-xl bg-[#f6f5f2] px-4 py-3">
-              <div className="text-xs text-[#a09e96]">Target clips</div>
-              <div className="mt-0.5 text-lg font-bold text-[#1a1a1a]">15<span className="ml-0.5 text-xs font-normal text-[#a09e96]">clips</span></div>
+            <div className="rounded-xl bg-background px-4 py-3">
+              <div className="text-xs text-[var(--text-tertiary)]">Target clips</div>
+              <div className="mt-0.5 text-lg font-bold text-foreground">15<span className="ml-0.5 text-xs font-normal text-[var(--text-tertiary)]">clips</span></div>
             </div>
           </div>
         </div>

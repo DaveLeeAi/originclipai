@@ -29,7 +29,7 @@ export default function ApiKeysPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-xl font-bold tracking-tight">API Keys</h1>
-        <p className="text-sm text-[#6b6960]">Manage your API keys for headless access</p>
+        <p className="text-sm text-muted-foreground">Manage your API keys for headless access</p>
       </div>
       <div className="max-w-2xl">
         <ApiKeysManager

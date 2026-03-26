@@ -27,7 +27,7 @@ export default function BillingPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-xl font-bold tracking-tight">Billing</h1>
-        <p className="text-sm text-[#6b6960]">Manage your plan and usage</p>
+        <p className="text-sm text-muted-foreground">Manage your plan and usage</p>
       </div>
       <div className="max-w-4xl">
         <BillingManager

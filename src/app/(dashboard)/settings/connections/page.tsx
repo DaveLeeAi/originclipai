@@ -14,7 +14,7 @@ export default function ConnectionsPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-xl font-bold tracking-tight">Connected Platforms</h1>
-        <p className="text-sm text-[#6b6960]">Connect your social accounts for scheduling</p>
+        <p className="text-sm text-muted-foreground">Connect your social accounts for scheduling</p>
       </div>
       <div className="max-w-2xl">
         <ConnectionsManager

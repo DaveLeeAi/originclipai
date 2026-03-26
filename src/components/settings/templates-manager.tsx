@@ -53,7 +53,7 @@ export function TemplatesManager({
     return (
       <Card className="p-8 text-center">
         <h3 className="mb-2 text-base font-bold">Custom prompts require Pro or Business</h3>
-        <p className="mb-5 text-sm text-[#6b6960]">
+        <p className="mb-5 text-sm text-muted-foreground">
           Define your own output formats — brand-specific LinkedIn templates, custom newsletter styles, or any text format you need.
         </p>
         <Button>Upgrade to Pro</Button>
@@ -90,7 +90,7 @@ export function TemplatesManager({
       <div className="mb-5 flex items-center justify-between">
         <div>
           <h3 className="text-sm font-bold">Prompt templates</h3>
-          <p className="text-xs text-[#a09e96]">
+          <p className="text-xs text-[var(--text-tertiary)]">
             Custom output formats run alongside default outputs for every job.
           </p>
         </div>
@@ -104,20 +104,20 @@ export function TemplatesManager({
         <Card className="mb-5 p-5">
           <div className="mb-4 grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#6b6960]">Template name</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Template name</label>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="e.g., My LinkedIn Style"
-                className="w-full rounded-lg border border-[#e4e2dd] px-3 py-2 text-sm outline-none focus:border-[#5046e5]/40"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-[var(--accent-primary)]/40"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#6b6960]">Output type</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Output type</label>
               <select
                 value={form.outputType}
                 onChange={(e) => setForm({ ...form, outputType: e.target.value })}
-                className="w-full rounded-lg border border-[#e4e2dd] px-3 py-2 text-sm outline-none"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none"
               >
                 {OUTPUT_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
@@ -126,25 +126,25 @@ export function TemplatesManager({
             </div>
           </div>
           <div className="mb-3">
-            <label className="mb-1 block text-xs font-semibold text-[#6b6960]">
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">
               Prompt instructions
             </label>
             <textarea
               value={form.promptText}
               onChange={(e) => setForm({ ...form, promptText: e.target.value })}
               placeholder="Write the instructions for generating this output. You can reference {source_title}, {speakers}, and {content} as variables..."
-              className="min-h-[120px] w-full resize-y rounded-lg border border-[#e4e2dd] px-3 py-2 text-sm outline-none focus:border-[#5046e5]/40"
+              className="min-h-[120px] w-full resize-y rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-[var(--accent-primary)]/40"
             />
           </div>
           <div className="mb-4">
-            <label className="mb-1 block text-xs font-semibold text-[#6b6960]">
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">
               Description (optional)
             </label>
             <input
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="What this template produces"
-              className="w-full rounded-lg border border-[#e4e2dd] px-3 py-2 text-sm outline-none"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none"
             />
           </div>
           <div className="flex gap-2">
@@ -161,7 +161,7 @@ export function TemplatesManager({
       {/* Templates list */}
       {templates.length === 0 ? (
         <Card className="p-6 text-center">
-          <p className="text-sm text-[#a09e96]">No custom templates yet. Create one to get started.</p>
+          <p className="text-sm text-[var(--text-tertiary)]">No custom templates yet. Create one to get started.</p>
         </Card>
       ) : (
         <div className="space-y-2">
@@ -179,9 +179,9 @@ export function TemplatesManager({
                     </Badge>
                   </div>
                   {template.description && (
-                    <p className="mt-0.5 text-xs text-[#a09e96]">{template.description}</p>
+                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{template.description}</p>
                   )}
-                  <p className="mt-1 font-mono text-[11px] text-[#a09e96]">
+                  <p className="mt-1 font-mono text-[11px] text-[var(--text-tertiary)]">
                     Used {template.usageCount} times
                   </p>
                 </div>
@@ -199,7 +199,7 @@ export function TemplatesManager({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-[#dc2626]"
+                    className="text-[var(--error)]"
                     onClick={() => onDelete(template.id)}
                   >
                     Delete

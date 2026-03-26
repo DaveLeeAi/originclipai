@@ -75,11 +75,11 @@ export function BillingManager({
   return (
     <div>
       {/* Coming soon banner */}
-      <div className="mb-6 rounded-xl border border-[#5046e5]/20 bg-[#5046e5]/[0.04] px-4 py-3">
-        <p className="text-sm font-medium text-[#5046e5]">
+      <div className="mb-6 rounded-xl border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/[0.04] px-4 py-3">
+        <p className="text-sm font-medium text-[var(--accent-primary)]">
           Billing integration coming soon
         </p>
-        <p className="mt-0.5 text-xs text-[#6b6960]">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           You&apos;re currently on the Free plan with 30 minutes/month. Paid plans and Stripe checkout will be available at launch.
         </p>
       </div>
@@ -89,26 +89,26 @@ export function BillingManager({
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold">Current usage</h3>
-            <p className="text-xs text-[#a09e96]">
+            <p className="text-xs text-[var(--text-tertiary)]">
               {currentPlan} plan
               {daysUntilReset !== null && ` · Resets in ${daysUntilReset} days`}
             </p>
           </div>
           <div className="text-right">
             <span className="text-2xl font-bold">{minutesUsed}</span>
-            <span className="text-sm text-[#a09e96]"> / {minutesLimit} min</span>
+            <span className="text-sm text-[var(--text-tertiary)]"> / {minutesLimit} min</span>
           </div>
         </div>
-        <div className="h-2.5 overflow-hidden rounded-full bg-[#e4e2dd]">
+        <div className="h-2.5 overflow-hidden rounded-full bg-[var(--border-default)]">
           <div
             className={cn(
               'h-full rounded-full transition-all',
-              usagePct >= 90 ? 'bg-[#dc2626]' : usagePct >= 70 ? 'bg-[#d97706]' : 'bg-[#5046e5]',
+              usagePct >= 90 ? 'bg-[var(--error)]' : usagePct >= 70 ? 'bg-[var(--warning)]' : 'bg-[var(--accent-primary)]',
             )}
             style={{ width: `${usagePct}%` }}
           />
         </div>
-        <div className="mt-2 flex justify-between text-xs text-[#a09e96]">
+        <div className="mt-2 flex justify-between text-xs text-[var(--text-tertiary)]">
           <span>{usagePct}% used</span>
           <span>{minutesLimit - minutesUsed} min remaining</span>
         </div>
@@ -126,8 +126,8 @@ export function BillingManager({
               className={cn(
                 'rounded-2xl border p-5',
                 isCurrent
-                  ? 'border-[#5046e5] bg-[#5046e5]/[0.03] shadow-md shadow-indigo-500/10'
-                  : 'border-[#e4e2dd] bg-white shadow-sm',
+                  ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)]/[0.03] shadow-md shadow-[var(--accent-primary)]/10'
+                  : 'border-border bg-white shadow-sm',
               )}
             >
               {plan.popular && !isCurrent && (
@@ -139,13 +139,13 @@ export function BillingManager({
               <h3 className="text-base font-bold">{plan.name}</h3>
               <div className="mt-1 mb-0.5">
                 <span className="text-2xl font-bold">{plan.price}</span>
-                <span className="text-xs text-[#6b6960]">{plan.period}</span>
+                <span className="text-xs text-muted-foreground">{plan.period}</span>
               </div>
-              <div className="mb-4 text-xs font-semibold text-[#5046e5]">{plan.minutes}</div>
+              <div className="mb-4 text-xs font-semibold text-[var(--accent-primary)]">{plan.minutes}</div>
               <ul className="mb-5 space-y-1.5">
                 {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-1.5 text-xs text-[#6b6960]">
-                    <span className="mt-0.5 text-[#16a34a]">✓</span>
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <span className="mt-0.5 text-[var(--success)]">✓</span>
                     {f}
                   </li>
                 ))}
