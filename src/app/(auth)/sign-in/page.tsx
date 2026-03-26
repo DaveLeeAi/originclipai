@@ -47,28 +47,28 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f6f5f2] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#5046e5] to-[#7c3aed] shadow-md shadow-indigo-500/30">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-primary)] shadow-md shadow-[var(--accent-primary)]/20">
               <span className="text-sm font-extrabold text-white">O</span>
             </div>
             <span className="text-lg font-bold tracking-tight">
-              OriginClip<span className="text-[#5046e5]">AI</span>
+              OriginClip<span className="text-[var(--accent-primary)]">AI</span>
             </span>
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-[#e4e2dd] bg-white p-7 shadow-sm">
+        <div className="rounded-2xl border border-border bg-white p-7 shadow-sm">
           <h1 className="mb-1 text-xl font-bold tracking-tight">Sign in</h1>
-          <p className="mb-6 text-sm text-[#6b6960]">Welcome back to OriginClipAI</p>
+          <p className="mb-6 text-sm text-muted-foreground">Welcome back to OriginClipAI</p>
 
           {/* Google OAuth */}
           <button
             onClick={handleGoogleLogin}
-            className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-[#e4e2dd] bg-white px-4 py-2.5 text-sm font-semibold text-[#1a1a1a] shadow-sm transition hover:shadow-md"
+            className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:shadow-md"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -80,39 +80,39 @@ export default function SignInPage() {
           </button>
 
           <div className="mb-4 flex items-center gap-3">
-            <div className="h-px flex-1 bg-[#e4e2dd]" />
-            <span className="text-xs text-[#a09e96]">or</span>
-            <div className="h-px flex-1 bg-[#e4e2dd]" />
+            <div className="h-px flex-1 bg-[var(--border-default)]" />
+            <span className="text-xs text-[var(--text-tertiary)]">or</span>
+            <div className="h-px flex-1 bg-[var(--border-default)]" />
           </div>
 
           {/* Email form */}
           <form onSubmit={handleEmailLogin}>
             <div className="mb-3">
-              <label className="mb-1 block text-xs font-semibold text-[#6b6960]">Email</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-xl border border-[#e4e2dd] px-4 py-2.5 text-sm outline-none focus:border-[#5046e5]/40"
+                className="w-full rounded-xl border border-border px-4 py-2.5 text-sm outline-none focus:border-[var(--accent-primary)]/40"
                 placeholder="you@example.com"
               />
             </div>
             <div className="mb-2">
-              <label className="mb-1 block text-xs font-semibold text-[#6b6960]">Password</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-[#e4e2dd] px-4 py-2.5 pr-10 text-sm outline-none focus:border-[#5046e5]/40"
+                  className="w-full rounded-xl border border-border px-4 py-2.5 pr-10 text-sm outline-none focus:border-[var(--accent-primary)]/40"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a09e96] hover:text-[#6b6960] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-muted-foreground transition-colors"
                   tabIndex={-1}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
@@ -134,14 +134,14 @@ export default function SignInPage() {
             <div className="mb-5 text-right">
               <Link
                 href="/forgot-password"
-                className="text-xs font-medium text-[#5046e5] hover:underline"
+                className="text-xs font-medium text-[var(--accent-primary)] hover:underline"
               >
                 Forgot password?
               </Link>
             </div>
 
             {error && (
-              <div className="mb-4 rounded-lg border border-[#dc2626]/20 bg-[#dc2626]/[0.04] px-3 py-2 text-xs text-[#dc2626]">
+              <div className="mb-4 rounded-lg border border-[var(--error)]/20 bg-[var(--error)]/[0.04] px-3 py-2 text-xs text-[var(--error)]">
                 {error}
               </div>
             )}
@@ -149,16 +149,16 @@ export default function SignInPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-gradient-to-r from-[#5046e5] to-[#7c3aed] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/25 transition hover:shadow-lg disabled:opacity-60"
+              className="w-full rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[var(--accent-primary)]/20 transition hover:shadow-lg disabled:opacity-60"
             >
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
         </div>
 
-        <p className="mt-5 text-center text-sm text-[#6b6960]">
+        <p className="mt-5 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{' '}
-          <Link href={`/sign-up?redirect=${encodeURIComponent(redirect)}`} className="font-semibold text-[#5046e5] hover:underline">
+          <Link href={`/sign-up?redirect=${encodeURIComponent(redirect)}`} className="font-semibold text-[var(--accent-primary)] hover:underline">
             Sign up free
           </Link>
         </p>

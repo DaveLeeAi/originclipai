@@ -55,18 +55,18 @@ export default function SignUpPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f6f5f2] px-4">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#16a34a]/10">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--success)]/10">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2.5" strokeLinecap="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
           <h1 className="mb-2 text-xl font-bold">Check your email</h1>
-          <p className="mb-6 text-sm text-[#6b6960]">
+          <p className="mb-6 text-sm text-muted-foreground">
             We sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
           </p>
-          <Link href="/sign-in" className="text-sm font-semibold text-[#5046e5] hover:underline">
+          <Link href="/sign-in" className="text-sm font-semibold text-[var(--accent-primary)] hover:underline">
             Back to sign in
           </Link>
         </div>
@@ -75,28 +75,28 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f6f5f2] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#5046e5] to-[#7c3aed] shadow-md shadow-indigo-500/30">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-primary)] shadow-md shadow-[var(--accent-primary)]/20">
               <span className="text-sm font-extrabold text-white">O</span>
             </div>
             <span className="text-lg font-bold tracking-tight">
-              OriginClip<span className="text-[#5046e5]">AI</span>
+              OriginClip<span className="text-[var(--accent-primary)]">AI</span>
             </span>
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-[#e4e2dd] bg-white p-7 shadow-sm">
+        <div className="rounded-2xl border border-border bg-white p-7 shadow-sm">
           <h1 className="mb-1 text-xl font-bold tracking-tight">Create your account</h1>
-          <p className="mb-6 text-sm text-[#6b6960]">
+          <p className="mb-6 text-sm text-muted-foreground">
             30 free minutes per month. No credit card required.
           </p>
 
           <button
             onClick={handleGoogleSignUp}
-            className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-[#e4e2dd] bg-white px-4 py-2.5 text-sm font-semibold text-[#1a1a1a] shadow-sm transition hover:shadow-md"
+            className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:shadow-md"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -108,25 +108,25 @@ export default function SignUpPage() {
           </button>
 
           <div className="mb-4 flex items-center gap-3">
-            <div className="h-px flex-1 bg-[#e4e2dd]" />
-            <span className="text-xs text-[#a09e96]">or</span>
-            <div className="h-px flex-1 bg-[#e4e2dd]" />
+            <div className="h-px flex-1 bg-[var(--border-default)]" />
+            <span className="text-xs text-[var(--text-tertiary)]">or</span>
+            <div className="h-px flex-1 bg-[var(--border-default)]" />
           </div>
 
           <form onSubmit={handleSignUp}>
             <div className="mb-3">
-              <label className="mb-1 block text-xs font-semibold text-[#6b6960]">Email</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-xl border border-[#e4e2dd] px-4 py-2.5 text-sm outline-none focus:border-[#5046e5]/40"
+                className="w-full rounded-xl border border-border px-4 py-2.5 text-sm outline-none focus:border-[var(--accent-primary)]/40"
                 placeholder="you@example.com"
               />
             </div>
             <div className="mb-5">
-              <label className="mb-1 block text-xs font-semibold text-[#6b6960]">Password</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -134,13 +134,13 @@ export default function SignUpPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={8}
-                  className="w-full rounded-xl border border-[#e4e2dd] px-4 py-2.5 pr-10 text-sm outline-none focus:border-[#5046e5]/40"
+                  className="w-full rounded-xl border border-border px-4 py-2.5 pr-10 text-sm outline-none focus:border-[var(--accent-primary)]/40"
                   placeholder="Minimum 8 characters"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a09e96] hover:text-[#6b6960] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-muted-foreground transition-colors"
                   tabIndex={-1}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
@@ -161,7 +161,7 @@ export default function SignUpPage() {
             </div>
 
             {error && (
-              <div className="mb-4 rounded-lg border border-[#dc2626]/20 bg-[#dc2626]/[0.04] px-3 py-2 text-xs text-[#dc2626]">
+              <div className="mb-4 rounded-lg border border-[var(--error)]/20 bg-[var(--error)]/[0.04] px-3 py-2 text-xs text-[var(--error)]">
                 {error}
               </div>
             )}
@@ -169,20 +169,20 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-gradient-to-r from-[#5046e5] to-[#7c3aed] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/25 transition hover:shadow-lg disabled:opacity-60"
+              className="w-full rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[var(--accent-primary)]/20 transition hover:shadow-lg disabled:opacity-60"
             >
               {loading ? 'Creating account…' : 'Create free account'}
             </button>
           </form>
 
-          <p className="mt-4 text-center text-[11px] text-[#a09e96]">
+          <p className="mt-4 text-center text-[11px] text-[var(--text-tertiary)]">
             By signing up you agree to our Terms of Service and Privacy Policy.
           </p>
         </div>
 
-        <p className="mt-5 text-center text-sm text-[#6b6960]">
+        <p className="mt-5 text-center text-sm text-muted-foreground">
           Already have an account?{' '}
-          <Link href={`/sign-in?redirect=${encodeURIComponent(redirect)}`} className="font-semibold text-[#5046e5] hover:underline">
+          <Link href={`/sign-in?redirect=${encodeURIComponent(redirect)}`} className="font-semibold text-[var(--accent-primary)] hover:underline">
             Sign in
           </Link>
         </p>
