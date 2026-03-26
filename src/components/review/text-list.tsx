@@ -24,19 +24,19 @@ function TextTypeIcon({ type }: { type: string }) {
   const iconClass = 'shrink-0';
   switch (type) {
     case 'linkedin_post':
-      return <PlatformIcon platform="linkedin" size={16} className={cn(iconClass, 'text-[#5046e5]')} />;
+      return <PlatformIcon platform="linkedin" size={16} className={cn(iconClass, 'text-[var(--accent-primary)]')} />;
     case 'x_thread':
-      return <PlatformIcon platform="x" size={16} className={cn(iconClass, 'text-[#1a1a1a]')} />;
+      return <PlatformIcon platform="x" size={16} className={cn(iconClass, 'text-foreground')} />;
     case 'newsletter_section':
       return (
-        <svg className={cn(iconClass, 'text-[#5046e5]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <svg className={cn(iconClass, 'text-[var(--accent-primary)]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
           <polyline points="22 6 12 13 2 6" />
         </svg>
       );
     case 'key_insight':
       return (
-        <svg className={cn(iconClass, 'text-[#d97706]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <svg className={cn(iconClass, 'text-[var(--warning)]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
         </svg>
       );
@@ -49,7 +49,7 @@ function TextTypeIcon({ type }: { type: string }) {
       );
     case 'summary':
       return (
-        <svg className={cn(iconClass, 'text-[#5046e5]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <svg className={cn(iconClass, 'text-[var(--accent-primary)]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
           <polyline points="14 2 14 8 20 8" />
           <line x1="16" y1="13" x2="8" y2="13" />
@@ -59,7 +59,7 @@ function TextTypeIcon({ type }: { type: string }) {
       );
     case 'chapter_markers':
       return (
-        <svg className={cn(iconClass, 'text-[#7c3aed]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <svg className={cn(iconClass, 'text-[var(--accent-primary)]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <line x1="8" y1="6" x2="21" y2="6" />
           <line x1="8" y1="12" x2="21" y2="12" />
           <line x1="8" y1="18" x2="21" y2="18" />
@@ -70,14 +70,14 @@ function TextTypeIcon({ type }: { type: string }) {
       );
     case 'blog_draft':
       return (
-        <svg className={cn(iconClass, 'text-[#0891b2]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <svg className={cn(iconClass, 'text-[var(--info)]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <path d="M12 20h9" />
           <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
         </svg>
       );
     default:
       return (
-        <svg className={cn(iconClass, 'text-[#a09e96]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <svg className={cn(iconClass, 'text-[var(--text-tertiary)]')} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <polyline points="4 7 4 4 20 4 20 7" />
           <line x1="9" y1="20" x2="15" y2="20" />
           <line x1="12" y1="4" x2="12" y2="20" />
@@ -91,13 +91,13 @@ export function TextList({ items, selectedId, onSelect }: TextListProps) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div className="max-w-xs">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e4e2dd] bg-[#f6f5f2]">
-            <svg className="text-[#a09e96]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-background">
+            <svg className="text-[var(--text-tertiary)]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>
             </svg>
           </div>
-          <p className="mb-1 text-sm font-semibold text-[#1a1a1a]">No text outputs yet</p>
-          <p className="text-xs text-[#a09e96]">
+          <p className="mb-1 text-sm font-semibold text-foreground">No text outputs yet</p>
+          <p className="text-xs text-[var(--text-tertiary)]">
             Text outputs like LinkedIn posts, X threads, and summaries will appear here once analysis completes.
           </p>
         </div>
@@ -117,25 +117,25 @@ export function TextList({ items, selectedId, onSelect }: TextListProps) {
             className={cn(
               'mb-1 cursor-pointer rounded-xl p-3.5 transition-all',
               selected
-                ? 'border border-[#5046e5]/30 bg-[#5046e5]/[0.03]'
-                : 'border border-transparent hover:bg-[#f0efec]',
+                ? 'border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/[0.03]'
+                : 'border border-transparent hover:bg-muted',
             )}
           >
             {/* Header */}
             <div className="mb-2 flex items-center gap-2">
               <TextTypeIcon type={item.type} />
-              <span className="text-[13px] font-bold text-[#1a1a1a]">{item.label}</span>
+              <span className="text-[13px] font-bold text-foreground">{item.label}</span>
               <div className="flex-1" />
               <StatusDot status={item.status} />
             </div>
 
             {/* Preview */}
-            <div className="mb-2 line-clamp-3 text-xs leading-relaxed text-[#6b6960]">
+            <div className="mb-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
               {item.content}
             </div>
 
             {/* Word count */}
-            <div className="font-mono text-[11px] text-[#a09e96]">
+            <div className="font-mono text-[11px] text-[var(--text-tertiary)]">
               {item.wordCount} words
             </div>
           </div>
@@ -216,8 +216,8 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
     return (
       <div className="p-7">
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#d97706]/10">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--warning)]/10">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" strokeWidth="2" strokeLinecap="round">
               <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
@@ -225,8 +225,8 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
           <div className="flex-1" />
           <Badge variant="amber">Insight</Badge>
         </div>
-        <div className="mb-5 rounded-2xl border border-[#d97706]/20 bg-[#d97706]/[0.03] p-5">
-          <p className="text-sm leading-relaxed text-[#1a1a1a]">{item.content}</p>
+        <div className="mb-5 rounded-2xl border border-[var(--warning)]/20 bg-[var(--warning)]/[0.03] p-5">
+          <p className="text-sm leading-relaxed text-foreground">{item.content}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" size="md" onClick={handleCopy}>
@@ -261,7 +261,7 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
           <Badge variant="green">Quote</Badge>
         </div>
         <blockquote className="mb-5 rounded-2xl border-l-4 border-[#059669] bg-[#059669]/[0.03] py-5 pl-6 pr-5">
-          <p className="text-base font-medium italic leading-relaxed text-[#1a1a1a]">
+          <p className="text-base font-medium italic leading-relaxed text-foreground">
             &ldquo;{item.content}&rdquo;
           </p>
         </blockquote>
@@ -288,8 +288,8 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
     return (
       <div className="p-7">
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#7c3aed]/10">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-primary)]/10">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round">
               <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
               <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
             </svg>
@@ -298,7 +298,7 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
           <div className="flex-1" />
           <Badge variant="default">{chapters.length} chapters</Badge>
         </div>
-        <div className="mb-5 rounded-2xl border border-[#e4e2dd] bg-white p-1">
+        <div className="mb-5 rounded-2xl border border-border bg-white p-1">
           {chapters.map((line, i) => {
             const spaceIdx = line.indexOf(' ');
             const timestamp = spaceIdx > 0 ? line.slice(0, spaceIdx) : '';
@@ -308,11 +308,11 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
                 key={i}
                 className={cn(
                   'flex items-center gap-3 rounded-xl px-4 py-2.5',
-                  i % 2 === 0 ? 'bg-[#f6f5f2]' : 'bg-white',
+                  i % 2 === 0 ? 'bg-background' : 'bg-white',
                 )}
               >
-                <span className="shrink-0 font-mono text-xs font-semibold text-[#5046e5]">{timestamp}</span>
-                <span className="text-sm text-[#1a1a1a]">{title}</span>
+                <span className="shrink-0 font-mono text-xs font-semibold text-[var(--accent-primary)]">{timestamp}</span>
+                <span className="text-sm text-foreground">{title}</span>
               </div>
             );
           })}
@@ -331,8 +331,8 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
     return (
       <div className="p-7">
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#5046e5]/10">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5046e5" strokeWidth="2" strokeLinecap="round">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-primary)]/10">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round">
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
               <polyline points="14 2 14 8 20 8" />
               <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
@@ -342,9 +342,9 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
           <div className="flex-1" />
           <Badge variant="default">{item.wordCount} words</Badge>
         </div>
-        <div className="mb-5 rounded-2xl border border-[#e4e2dd] bg-white p-5">
+        <div className="mb-5 rounded-2xl border border-border bg-white p-5">
           {item.content.split('\n\n').map((paragraph, i) => (
-            <p key={i} className={cn('text-sm leading-relaxed text-[#1a1a1a]', i > 0 && 'mt-3')}>
+            <p key={i} className={cn('text-sm leading-relaxed text-foreground', i > 0 && 'mt-3')}>
               {paragraph}
             </p>
           ))}
@@ -381,20 +381,20 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
       <textarea
         value={content}
         onChange={(e) => { setContent(e.target.value); setSaveStatus('idle'); }}
-        className="mb-1 min-h-[240px] w-full rounded-2xl border border-[#e4e2dd] bg-white p-5 text-sm leading-relaxed text-[#1a1a1a] shadow-sm outline-none focus:border-[#5046e5]/40"
+        className="mb-1 min-h-[240px] w-full rounded-2xl border border-border bg-white p-5 text-sm leading-relaxed text-foreground shadow-sm outline-none focus:border-[var(--accent-primary)]/40"
         style={{ resize: 'vertical' }}
       />
 
       {/* Dirty indicator + save */}
       <div className="mb-4 flex items-center gap-2">
         {isDirty && (
-          <span className="text-[11px] text-[#d97706]">Unsaved changes</span>
+          <span className="text-[11px] text-[var(--warning)]">Unsaved changes</span>
         )}
         {saveStatus === 'saved' && (
-          <span className="text-[11px] text-[#16a34a]">Saved</span>
+          <span className="text-[11px] text-[var(--success)]">Saved</span>
         )}
         {saveStatus === 'error' && (
-          <span className="text-[11px] text-[#dc2626]">Save failed</span>
+          <span className="text-[11px] text-[var(--error)]">Save failed</span>
         )}
         <div className="flex-1" />
         {isDirty && (
@@ -406,8 +406,8 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
 
       {/* Refine with AI */}
       {showRefine ? (
-        <div className="mb-5 rounded-xl border border-[#5046e5]/20 bg-[#5046e5]/[0.03] p-4">
-          <div className="mb-2 text-xs font-bold text-[#5046e5]">Refine with AI</div>
+        <div className="mb-5 rounded-xl border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/[0.03] p-4">
+          <div className="mb-2 text-xs font-bold text-[var(--accent-primary)]">Refine with AI</div>
           <div className="flex gap-2">
             <input
               type="text"
@@ -415,7 +415,7 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
               onChange={(e) => setRefineInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleRefine()}
               placeholder="Make it shorter, add a stronger hook, more casual..."
-              className="flex-1 rounded-lg border border-[#e4e2dd] bg-white px-3 py-2 text-sm outline-none placeholder:text-[#a09e96]"
+              className="flex-1 rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none placeholder:text-[var(--text-tertiary)]"
               disabled={isRefining}
             />
             <Button size="sm" onClick={handleRefine} disabled={!refineInput.trim() || isRefining}>
@@ -423,14 +423,14 @@ export function TextDetail({ item, onRefine, onSave, onCopy, onApprove }: TextDe
             </Button>
           </div>
           {refineError && (
-            <p className="mt-2 text-xs text-[#dc2626]">{refineError}</p>
+            <p className="mt-2 text-xs text-[var(--error)]">{refineError}</p>
           )}
           <div className="mt-2 flex flex-wrap gap-1.5">
             {['Make it shorter', 'Stronger hook', 'More professional', 'More casual'].map((q) => (
               <button
                 key={q}
                 onClick={() => setRefineInput(q)}
-                className="rounded-md border border-[#e4e2dd] bg-white px-2 py-1 text-[11px] text-[#6b6960] hover:border-[#5046e5] hover:text-[#5046e5]"
+                className="rounded-md border border-border bg-white px-2 py-1 text-[11px] text-muted-foreground hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
               >
                 {q}
               </button>

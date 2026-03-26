@@ -26,12 +26,12 @@ export function ClipDetail({ clip, onApprove, onReject, onTogglePlatform }: Clip
   return (
     <div className="p-7">
       {/* Video preview */}
-      <div className="relative mx-auto mb-7 flex aspect-[9/16] w-full max-w-[300px] items-center justify-center overflow-hidden rounded-2xl border border-[#e4e2dd] bg-gradient-to-b from-[#e0ddd7] to-[#ccc9c2] shadow-xl">
+      <div className="relative mx-auto mb-7 flex aspect-[9/16] w-full max-w-[300px] items-center justify-center overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-[#e0ddd7] to-[#ccc9c2] shadow-xl">
         <div className="text-center">
-          <svg className="mx-auto mb-2 text-[#a09e96] opacity-50" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="mx-auto mb-2 text-[var(--text-tertiary)] opacity-50" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polygon points="5 3 19 12 5 21 5 3" />
           </svg>
-          <span className="text-xs text-[#a09e96]">Preview · {formatDuration(clip.duration)}</span>
+          <span className="text-xs text-[var(--text-tertiary)]">Preview · {formatDuration(clip.duration)}</span>
         </div>
 
         {/* Caption preview */}
@@ -39,7 +39,7 @@ export function ClipDetail({ clip, onApprove, onReject, onTogglePlatform }: Clip
           <p className="text-center text-base font-extrabold leading-snug text-white drop-shadow-md">
             {clip.hook ? (
               <>
-                <span className="rounded bg-[#5046e5] px-1.5 py-0.5">
+                <span className="rounded bg-[var(--accent-primary)] px-1.5 py-0.5">
                   {clip.hook.split(' ').slice(0, 2).join(' ')}
                 </span>{' '}
                 {clip.hook.split(' ').slice(2, 6).join(' ')}
@@ -64,7 +64,7 @@ export function ClipDetail({ clip, onApprove, onReject, onTogglePlatform }: Clip
 
       {/* Score breakdown */}
       {clip.scoreFactors && (
-        <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl border border-[#e4e2dd] bg-[#f6f5f2] p-3">
+        <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl border border-border bg-background p-3">
           {[
             { label: 'Coherence', value: clip.scoreFactors.coherence },
             { label: 'Hook', value: clip.scoreFactors.hookStrength },
@@ -72,8 +72,8 @@ export function ClipDetail({ clip, onApprove, onReject, onTogglePlatform }: Clip
             { label: 'Energy', value: clip.scoreFactors.emotionalEnergy },
           ].map((factor) => (
             <div key={factor.label} className="flex items-center justify-between px-2 py-1">
-              <span className="text-xs text-[#6b6960]">{factor.label}</span>
-              <span className="font-mono text-xs font-semibold text-[#1a1a1a]">{factor.value}</span>
+              <span className="text-xs text-muted-foreground">{factor.label}</span>
+              <span className="font-mono text-xs font-semibold text-foreground">{factor.value}</span>
             </div>
           ))}
         </div>
@@ -84,7 +84,7 @@ export function ClipDetail({ clip, onApprove, onReject, onTogglePlatform }: Clip
         <Button
           variant="primary"
           size="md"
-          className="flex-1 bg-gradient-to-r from-[#16a34a] to-[#15803d] shadow-green-600/25"
+          className="flex-1 bg-gradient-to-r from-[var(--success)] to-[#15803d] shadow-green-600/25"
           onClick={() => onApprove(clip.id)}
           disabled={clip.status === 'approved'}
         >
@@ -107,8 +107,8 @@ export function ClipDetail({ clip, onApprove, onReject, onTogglePlatform }: Clip
       </div>
 
       {/* Schedule to */}
-      <div className="rounded-2xl border border-[#e4e2dd] bg-white p-4 shadow-sm">
-        <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#a09e96]">
+      <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+        <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
           Schedule to
         </div>
         <div className="flex gap-2">
@@ -120,8 +120,8 @@ export function ClipDetail({ clip, onApprove, onReject, onTogglePlatform }: Clip
                 onClick={() => onTogglePlatform(clip.id, p.key)}
                 className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-all ${
                   active
-                    ? 'border-[#5046e5]/30 bg-[#5046e5]/[0.06] text-[#4338ca]'
-                    : 'border-[#e4e2dd] bg-white text-[#6b6960] hover:border-[#5046e5]'
+                    ? 'border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/[0.06] text-[var(--accent-primary)]'
+                    : 'border-border bg-white text-muted-foreground hover:border-[var(--accent-primary)]'
                 }`}
               >
                 <PlatformIcon platform={p.key} size={14} />
@@ -137,12 +137,12 @@ export function ClipDetail({ clip, onApprove, onReject, onTogglePlatform }: Clip
         <div className="mt-5">
           <button
             onClick={() => setShowTranscript(!showTranscript)}
-            className="text-xs font-semibold text-[#5046e5] hover:underline"
+            className="text-xs font-semibold text-[var(--accent-primary)] hover:underline"
           >
             {showTranscript ? 'Hide transcript' : 'Show transcript excerpt'}
           </button>
           {showTranscript && (
-            <div className="mt-2 rounded-xl border border-[#e4e2dd] bg-[#f6f5f2] p-4 text-xs leading-relaxed text-[#6b6960]">
+            <div className="mt-2 rounded-xl border border-border bg-background p-4 text-xs leading-relaxed text-muted-foreground">
               {clip.transcriptExcerpt}
             </div>
           )}
@@ -150,10 +150,10 @@ export function ClipDetail({ clip, onApprove, onReject, onTogglePlatform }: Clip
       )}
 
       {/* Keyboard hints */}
-      <div className="mt-6 flex justify-center gap-4 text-[10px] text-[#a09e96]">
-        <span><kbd className="rounded border border-[#e4e2dd] bg-white px-1.5 py-0.5 font-mono">A</kbd> approve</span>
-        <span><kbd className="rounded border border-[#e4e2dd] bg-white px-1.5 py-0.5 font-mono">S</kbd> skip</span>
-        <span><kbd className="rounded border border-[#e4e2dd] bg-white px-1.5 py-0.5 font-mono">→</kbd> next</span>
+      <div className="mt-6 flex justify-center gap-4 text-[10px] text-[var(--text-tertiary)]">
+        <span><kbd className="rounded border border-border bg-white px-1.5 py-0.5 font-mono">A</kbd> approve</span>
+        <span><kbd className="rounded border border-border bg-white px-1.5 py-0.5 font-mono">S</kbd> skip</span>
+        <span><kbd className="rounded border border-border bg-white px-1.5 py-0.5 font-mono">→</kbd> next</span>
       </div>
     </div>
   );

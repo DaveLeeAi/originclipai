@@ -170,8 +170,8 @@ export function ReviewClient({ jobId }: Props) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[#e4e2dd] border-t-[#5046e5]" />
-          <p className="text-sm text-[#a09e96]">Loading job...</p>
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-border border-t-[var(--accent-primary)]" />
+          <p className="text-sm text-[var(--text-tertiary)]">Loading job...</p>
         </div>
       </div>
     );
@@ -182,18 +182,18 @@ export function ReviewClient({ jobId }: Props) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#dc2626]/20 bg-[#dc2626]/[0.04]">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--error)]/20 bg-[var(--error)]/[0.04]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
-          <p className="mb-2 text-sm font-semibold text-[#dc2626]">Failed to load review data</p>
-          <p className="mb-4 text-xs text-[#a09e96]">
+          <p className="mb-2 text-sm font-semibold text-[var(--error)]">Failed to load review data</p>
+          <p className="mb-4 text-xs text-[var(--text-tertiary)]">
             {(jobError ?? clipsError ?? textsError)?.message ?? 'An unexpected error occurred.'}
           </p>
           <Link
             href="/jobs"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#e4e2dd] bg-white px-4 py-2 text-xs font-semibold text-[#6b6960] shadow-sm hover:shadow-md"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-4 py-2 text-xs font-semibold text-muted-foreground shadow-sm hover:shadow-md"
           >
             Back to jobs
           </Link>
@@ -209,11 +209,11 @@ export function ReviewClient({ jobId }: Props) {
   return (
     <div className="flex h-full flex-col">
       {/* Job header */}
-      <div className="border-b border-[#e4e2dd] bg-white px-6 py-4">
+      <div className="border-b border-border bg-white px-6 py-4">
         <div className="flex items-center gap-3">
           <Link
             href="/jobs"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#e4e2dd] text-[#a09e96] hover:border-[#5046e5] hover:text-[#5046e5]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-[var(--text-tertiary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <polyline points="15 18 9 12 15 6" />
@@ -223,25 +223,25 @@ export function ReviewClient({ jobId }: Props) {
             <h1 className="truncate text-base font-bold tracking-tight">
               {job?.sourceTitle ?? 'Untitled job'}
             </h1>
-            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[#a09e96]">
+            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
               {job?.sourceType && (
                 <span>{SOURCE_LABELS[job.sourceType] ?? job.sourceType}</span>
               )}
               {job?.sourceDurationSeconds != null && job.sourceDurationSeconds > 0 && (
                 <>
-                  <span className="text-[#e4e2dd]">·</span>
+                  <span className="text-[var(--border-default)]">·</span>
                   <span>{formatDuration(job.sourceDurationSeconds)}</span>
                 </>
               )}
               {job?.transcript?.speakerCount != null && job.transcript.speakerCount > 0 && (
                 <>
-                  <span className="text-[#e4e2dd]">·</span>
+                  <span className="text-[var(--border-default)]">·</span>
                   <span>{job.transcript.speakerCount} speakers</span>
                 </>
               )}
               {job?.transcript?.wordCount != null && job.transcript.wordCount > 0 && (
                 <>
-                  <span className="text-[#e4e2dd]">·</span>
+                  <span className="text-[var(--border-default)]">·</span>
                   <span>{job.transcript.wordCount.toLocaleString()} words</span>
                 </>
               )}
@@ -259,7 +259,7 @@ export function ReviewClient({ jobId }: Props) {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center border-b border-[#e4e2dd] bg-white px-6">
+      <div className="flex items-center border-b border-border bg-white px-6">
         {([
           { key: 'clips' as Tab, label: 'Video Clips', count: clipItems.length },
           { key: 'text' as Tab, label: 'Text Outputs', count: textItems.length },
@@ -270,8 +270,8 @@ export function ReviewClient({ jobId }: Props) {
             className={cn(
               'flex items-center gap-2 border-b-2 px-5 py-3.5 text-[13px] font-semibold transition-all',
               tab === t.key
-                ? 'border-[#5046e5] text-[#4338ca]'
-                : 'border-transparent text-[#6b6960] hover:text-[#1a1a1a]',
+                ? 'border-[var(--accent-primary)] text-[var(--accent-primary)]'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
             {t.label}
@@ -279,8 +279,8 @@ export function ReviewClient({ jobId }: Props) {
               className={cn(
                 'rounded-md px-1.5 py-0.5 font-mono text-[11px] font-bold',
                 tab === t.key
-                  ? 'bg-[#5046e5]/10 text-[#5046e5]'
-                  : 'bg-[#f6f5f2] text-[#a09e96]',
+                  ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]'
+                  : 'bg-background text-[var(--text-tertiary)]',
               )}
             >
               {t.count}
@@ -290,7 +290,7 @@ export function ReviewClient({ jobId }: Props) {
 
         <div className="flex-1" />
 
-        <button className="flex items-center gap-1.5 rounded-lg border border-[#e4e2dd] bg-white px-3 py-1.5 text-xs font-semibold text-[#6b6960] shadow-sm hover:shadow-md">
+        <button className="flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-muted-foreground shadow-sm hover:shadow-md">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
           </svg>
@@ -301,7 +301,7 @@ export function ReviewClient({ jobId }: Props) {
       {/* Content: list + detail */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel — list */}
-        <div className="w-[420px] min-w-[420px] border-r border-[#e4e2dd] bg-white">
+        <div className="w-[420px] min-w-[420px] border-r border-border bg-white">
           {tab === 'clips' ? (
             clipsLoading && clipItems.length === 0 ? (
               <ListSkeleton />
@@ -326,7 +326,7 @@ export function ReviewClient({ jobId }: Props) {
         </div>
 
         {/* Right panel — detail */}
-        <div className="flex-1 overflow-auto bg-[#f6f5f2]">
+        <div className="flex-1 overflow-auto bg-background">
           {tab === 'clips' && selectedClip ? (
             <ClipDetail
               clip={selectedClip}
@@ -345,7 +345,7 @@ export function ReviewClient({ jobId }: Props) {
             />
           ) : (
             <div className="flex h-full items-center justify-center">
-              <div className="text-center text-[#a09e96]">
+              <div className="text-center text-[var(--text-tertiary)]">
                 <svg className="mx-auto mb-3 opacity-30" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                   {tab === 'clips' ? (
                     <><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/></>
@@ -372,12 +372,12 @@ function ListSkeleton() {
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="animate-pulse rounded-xl border border-transparent p-3.5">
           <div className="mb-2 flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full bg-[#e4e2dd]" />
-            <div className="h-3 flex-1 rounded bg-[#e4e2dd]" />
-            <div className="h-4 w-8 rounded bg-[#e4e2dd]" />
+            <div className="h-3 w-3 rounded-full bg-[var(--border-default)]" />
+            <div className="h-3 flex-1 rounded bg-[var(--border-default)]" />
+            <div className="h-4 w-8 rounded bg-[var(--border-default)]" />
           </div>
-          <div className="mb-1.5 h-4 w-3/4 rounded bg-[#e4e2dd]" />
-          <div className="h-3 w-1/2 rounded bg-[#e4e2dd]" />
+          <div className="mb-1.5 h-4 w-3/4 rounded bg-[var(--border-default)]" />
+          <div className="h-3 w-1/2 rounded bg-[var(--border-default)]" />
         </div>
       ))}
     </div>
