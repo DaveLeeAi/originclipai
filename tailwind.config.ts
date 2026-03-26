@@ -132,7 +132,7 @@ const config: Config = {
       fontFamily: {
         sans: ["Inter", "var(--font-sans)", "system-ui", "sans-serif"],
         body: ["DM Sans", "var(--font-body)", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "var(--font-mono)", "monospace"],
+        mono: ["var(--font-geist-mono)", "JetBrains Mono", "var(--font-mono)", "monospace"],
         display: ["Instrument Sans", "SF Pro Display", "-apple-system", "sans-serif"],
       },
 
