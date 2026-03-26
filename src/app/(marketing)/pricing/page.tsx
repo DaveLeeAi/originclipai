@@ -137,21 +137,21 @@ const FAQ = [
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-[#f6f5f2]">
+    <main className="min-h-screen bg-background">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 border-b border-[#e4e2dd] bg-white/85 backdrop-blur-xl">
+      <nav className="sticky top-0 z-50 border-b border-border bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#5046e5] to-[#7c3aed] shadow-md shadow-indigo-500/30">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-primary)] shadow-md shadow-[var(--accent-primary)]/20">
               <span className="text-sm font-extrabold text-white">O</span>
             </div>
             <span className="text-lg font-bold tracking-tight">
-              OriginClip<span className="text-[#5046e5]">AI</span>
+              OriginClip<span className="text-[var(--accent-primary)]">AI</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/sign-in" className="text-sm font-semibold text-[#6b6960]">Sign in</Link>
-            <Link href="/sign-up" className="rounded-lg bg-gradient-to-r from-[#5046e5] to-[#7c3aed] px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-500/25">
+            <Link href="/sign-in" className="text-sm font-semibold text-muted-foreground">Sign in</Link>
+            <Link href="/sign-up" className="rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[var(--accent-primary)]/20">
               Try free
             </Link>
           </div>
@@ -161,7 +161,7 @@ export default function PricingPage() {
       {/* Hero */}
       <section className="mx-auto max-w-5xl px-6 pb-4 pt-16 text-center">
         <h1 className="mb-3 text-4xl font-bold tracking-tight">Simple pricing. No surprises.</h1>
-        <p className="mx-auto max-w-xl text-[#6b6960]">
+        <p className="mx-auto max-w-xl text-muted-foreground">
           Processing minutes per month. That&apos;s the only variable.
           No hidden AI credits. No per-feature upsells. No surprise bills.
         </p>
@@ -175,34 +175,34 @@ export default function PricingPage() {
               key={plan.name}
               className={`rounded-2xl border p-6 ${
                 plan.highlight
-                  ? 'border-[#5046e5] bg-white shadow-lg shadow-indigo-500/10'
-                  : 'border-[#e4e2dd] bg-white shadow-sm'
+                  ? 'border-[var(--accent-primary)] bg-white shadow-lg shadow-[var(--accent-primary)]/10'
+                  : 'border-border bg-white shadow-sm'
               }`}
             >
               {plan.badge && (
-                <span className="mb-3 inline-block rounded-md bg-[#5046e5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                <span className="mb-3 inline-block rounded-md bg-[var(--accent-primary)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
                   {plan.badge}
                 </span>
               )}
               <h2 className="text-lg font-bold">{plan.name}</h2>
-              <p className="mb-3 text-xs text-[#6b6960]">{plan.description}</p>
+              <p className="mb-3 text-xs text-muted-foreground">{plan.description}</p>
               <div className="mb-1">
                 <span className="text-3xl font-bold">{plan.price}</span>
-                <span className="text-sm text-[#6b6960]">{plan.period}</span>
+                <span className="text-sm text-muted-foreground">{plan.period}</span>
               </div>
               {plan.annual && (
-                <div className="mb-3 text-[11px] text-[#16a34a]">{plan.annual}</div>
+                <div className="mb-3 text-[11px] text-[var(--success)]">{plan.annual}</div>
               )}
-              <div className="mb-5 text-xs font-semibold text-[#5046e5]">{plan.minutes}</div>
+              <div className="mb-5 text-xs font-semibold text-[var(--accent-primary)]">{plan.minutes}</div>
 
               <ul className="mb-6 space-y-2">
                 {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-[#6b6960]">
-                    <span className="mt-0.5 text-[#16a34a]">✓</span> {f}
+                  <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <span className="mt-0.5 text-[var(--success)]">✓</span> {f}
                   </li>
                 ))}
                 {plan.limitations.map((l) => (
-                  <li key={l} className="flex items-start gap-2 text-sm text-[#a09e96]">
+                  <li key={l} className="flex items-start gap-2 text-sm text-[var(--text-tertiary)]">
                     <span className="mt-0.5">—</span> {l}
                   </li>
                 ))}
@@ -212,8 +212,8 @@ export default function PricingPage() {
                 href={plan.ctaHref}
                 className={`block w-full rounded-lg py-2.5 text-center text-sm font-bold transition ${
                   plan.highlight
-                    ? 'bg-gradient-to-r from-[#5046e5] to-[#7c3aed] text-white shadow-md shadow-indigo-500/25'
-                    : 'border border-[#e4e2dd] bg-[#f6f5f2] text-[#1a1a1a] hover:border-[#5046e5]'
+                    ? 'bg-[var(--accent-primary)] text-white shadow-md shadow-[var(--accent-primary)]/20'
+                    : 'border border-border bg-background text-foreground hover:border-[var(--accent-primary)]'
                 }`}
               >
                 {plan.cta}
@@ -224,14 +224,14 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="border-t border-[#e4e2dd] bg-white py-16">
+      <section className="border-t border-border bg-white py-16">
         <div className="mx-auto max-w-3xl px-6">
           <h2 className="mb-10 text-center text-2xl font-bold">Pricing FAQ</h2>
           <div className="space-y-6">
             {FAQ.map((faq) => (
               <div key={faq.q}>
                 <h3 className="mb-1.5 text-sm font-bold">{faq.q}</h3>
-                <p className="text-sm leading-relaxed text-[#6b6960]">{faq.a}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">{faq.a}</p>
               </div>
             ))}
           </div>
@@ -241,8 +241,8 @@ export default function PricingPage() {
       {/* CTA */}
       <section className="py-16 text-center">
         <h2 className="mb-3 text-2xl font-bold">Start repurposing today</h2>
-        <p className="mb-6 text-[#6b6960]">30 free minutes. No credit card required.</p>
-        <Link href="/sign-up" className="inline-block rounded-xl bg-gradient-to-r from-[#5046e5] to-[#7c3aed] px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-indigo-500/25">
+        <p className="mb-6 text-muted-foreground">30 free minutes. No credit card required.</p>
+        <Link href="/sign-up" className="inline-block rounded-xl bg-[var(--accent-primary)] px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-[var(--accent-primary)]/20">
           Create free account
         </Link>
       </section>

@@ -13,7 +13,7 @@ export async function MarketingNav() {
     <nav className="sticky top-0 z-50 border-b border-black/[0.08] bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6366F1] shadow-md shadow-indigo-500/30">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6366F1] shadow-md shadow-[var(--accent-primary)]/20">
             <span className="text-sm font-extrabold text-white">O</span>
           </div>
           <span className="text-lg font-bold tracking-tight text-[#0F172A]">

@@ -211,21 +211,21 @@ export default async function ComparePage({
   const featureKeys = Object.keys(ORIGIN_FEATURES);
 
   return (
-    <main className="min-h-screen bg-[#f6f5f2] text-[#1a1a1a]">
+    <main className="min-h-screen bg-background text-foreground">
       {/* NAV */}
-      <nav className="sticky top-0 z-50 border-b border-[#e4e2dd] bg-white/85 backdrop-blur-xl">
+      <nav className="sticky top-0 z-50 border-b border-border bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#5046e5] to-[#7c3aed]">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-primary)]">
               <span className="text-xs font-extrabold text-white">O</span>
             </div>
             <span className="font-bold tracking-tight">
-              OriginClip<span className="text-[#5046e5]">AI</span>
+              OriginClip<span className="text-[var(--accent-primary)]">AI</span>
             </span>
           </Link>
           <Link
             href="/sign-up"
-            className="rounded-lg bg-gradient-to-r from-[#5046e5] to-[#7c3aed] px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-500/25"
+            className="rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[var(--accent-primary)]/20"
           >
             Try free
           </Link>
@@ -234,34 +234,34 @@ export default async function ComparePage({
 
       <div className="mx-auto max-w-4xl px-6 py-16">
         {/* HEADER */}
-        <div className="mb-4 text-sm font-medium text-[#6b6960]">
-          <Link href="/" className="hover:text-[#5046e5]">Home</Link>
+        <div className="mb-4 text-sm font-medium text-muted-foreground">
+          <Link href="/" className="hover:text-[var(--accent-primary)]">Home</Link>
           {' / '}
           <span>Compare</span>
           {' / '}
-          <span className="text-[#1a1a1a]">{comp.name}</span>
+          <span className="text-foreground">{comp.name}</span>
         </div>
 
         <h1 className="mb-4 text-4xl font-bold leading-tight tracking-tight">
           OriginClipAI vs {comp.name}
         </h1>
-        <p className="mb-12 text-lg text-[#6b6960]">
+        <p className="mb-12 text-lg text-muted-foreground">
           An honest comparison to help you pick the right content repurposing tool.
         </p>
 
         {/* QUICK COMPARISON TABLE */}
-        <div className="mb-16 overflow-hidden rounded-2xl border border-[#e4e2dd] bg-white shadow-sm">
-          <div className="grid grid-cols-3 border-b border-[#e4e2dd] bg-[#f6f5f2] text-sm font-bold">
+        <div className="mb-16 overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+          <div className="grid grid-cols-3 border-b border-border bg-background text-sm font-bold">
             <div className="px-5 py-3">Feature</div>
-            <div className="px-5 py-3 text-[#5046e5]">OriginClipAI</div>
+            <div className="px-5 py-3 text-[var(--accent-primary)]">OriginClipAI</div>
             <div className="px-5 py-3">{comp.name}</div>
           </div>
           {featureKeys.map((key, i) => (
             <div
               key={key}
-              className={`grid grid-cols-3 text-sm ${i < featureKeys.length - 1 ? 'border-b border-[#eeedea]' : ''}`}
+              className={`grid grid-cols-3 text-sm ${i < featureKeys.length - 1 ? 'border-b border-border' : ''}`}
             >
-              <div className="px-5 py-3 text-[#6b6960]">{key}</div>
+              <div className="px-5 py-3 text-muted-foreground">{key}</div>
               <div className="px-5 py-3">
                 <FeatureCell value={ORIGIN_FEATURES[key]} />
               </div>
@@ -277,12 +277,12 @@ export default async function ComparePage({
           <h2 className="mb-4 text-2xl font-bold tracking-tight">
             Where {comp.name} excels
           </h2>
-          <p className="mb-4 text-[#6b6960]">{comp.description}</p>
+          <p className="mb-4 text-muted-foreground">{comp.description}</p>
           <ul className="space-y-2">
             {comp.strengths.map((s) => (
               <li key={s} className="flex items-start gap-2 text-sm">
-                <span className="mt-0.5 text-[#16a34a]">✓</span>
-                <span className="text-[#6b6960]">{s}</span>
+                <span className="mt-0.5 text-[var(--success)]">✓</span>
+                <span className="text-muted-foreground">{s}</span>
               </li>
             ))}
           </ul>
@@ -296,8 +296,8 @@ export default async function ComparePage({
           <ul className="space-y-2">
             {comp.weaknesses.map((w) => (
               <li key={w} className="flex items-start gap-2 text-sm">
-                <span className="mt-0.5 text-[#5046e5]">→</span>
-                <span className="text-[#6b6960]">{w}</span>
+                <span className="mt-0.5 text-[var(--accent-primary)]">→</span>
+                <span className="text-muted-foreground">{w}</span>
               </li>
             ))}
           </ul>
@@ -307,15 +307,15 @@ export default async function ComparePage({
         <section className="mb-12">
           <h2 className="mb-4 text-2xl font-bold tracking-tight">Pricing comparison</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-[#5046e5]/20 bg-[#5046e5]/[0.03] p-5">
-              <div className="mb-1 text-sm font-bold text-[#5046e5]">OriginClipAI</div>
-              <div className="text-sm text-[#6b6960]">Free ($0) → Creator ($19/mo) → Pro ($39/mo) → Business ($79/mo)</div>
-              <div className="mt-2 text-xs text-[#a09e96]">Includes video clips + all text outputs + scheduling. No hidden AI credits.</div>
+            <div className="rounded-xl border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/[0.03] p-5">
+              <div className="mb-1 text-sm font-bold text-[var(--accent-primary)]">OriginClipAI</div>
+              <div className="text-sm text-muted-foreground">Free ($0) → Creator ($19/mo) → Pro ($39/mo) → Business ($79/mo)</div>
+              <div className="mt-2 text-xs text-[var(--text-tertiary)]">Includes video clips + all text outputs + scheduling. No hidden AI credits.</div>
             </div>
-            <div className="rounded-xl border border-[#e4e2dd] bg-white p-5">
+            <div className="rounded-xl border border-border bg-white p-5">
               <div className="mb-1 text-sm font-bold">{comp.name}</div>
-              <div className="text-sm text-[#6b6960]">{comp.pricing}</div>
-              <div className="mt-2 text-xs text-[#a09e96]">Video clips only{comp.slug === 'descript' ? ' (plus AI credits for text features)' : '. Text repurposing requires a separate tool.'}.</div>
+              <div className="text-sm text-muted-foreground">{comp.pricing}</div>
+              <div className="mt-2 text-xs text-[var(--text-tertiary)]">Video clips only{comp.slug === 'descript' ? ' (plus AI credits for text features)' : '. Text repurposing requires a separate tool.'}.</div>
             </div>
           </div>
         </section>
@@ -324,13 +324,13 @@ export default async function ComparePage({
         <section className="mb-16">
           <h2 className="mb-4 text-2xl font-bold tracking-tight">Which should you use?</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-[#e4e2dd] bg-white p-5">
+            <div className="rounded-xl border border-border bg-white p-5">
               <div className="mb-2 text-sm font-bold">Use {comp.name} if:</div>
-              <p className="text-sm text-[#6b6960]">{comp.bestFor}</p>
+              <p className="text-sm text-muted-foreground">{comp.bestFor}</p>
             </div>
-            <div className="rounded-xl border border-[#5046e5]/20 bg-[#5046e5]/[0.03] p-5">
-              <div className="mb-2 text-sm font-bold text-[#5046e5]">Use OriginClipAI if:</div>
-              <p className="text-sm text-[#6b6960]">
+            <div className="rounded-xl border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/[0.03] p-5">
+              <div className="mb-2 text-sm font-bold text-[var(--accent-primary)]">Use OriginClipAI if:</div>
+              <p className="text-sm text-muted-foreground">
                 You want video clips AND text outputs (LinkedIn posts, X threads, newsletter sections) from one upload,
                 with a structured review workflow and built-in scheduling. Especially if you also repurpose articles and PDFs.
               </p>
@@ -339,12 +339,12 @@ export default async function ComparePage({
         </section>
 
         {/* CTA */}
-        <div className="rounded-2xl border border-[#e4e2dd] bg-white p-8 text-center shadow-sm">
+        <div className="rounded-2xl border border-border bg-white p-8 text-center shadow-sm">
           <h2 className="mb-3 text-2xl font-bold">Ready to try OriginClipAI?</h2>
-          <p className="mb-6 text-[#6b6960]">30 free minutes. No credit card required.</p>
+          <p className="mb-6 text-muted-foreground">30 free minutes. No credit card required.</p>
           <Link
             href="/sign-up"
-            className="inline-block rounded-xl bg-gradient-to-r from-[#5046e5] to-[#7c3aed] px-8 py-3 text-base font-bold text-white shadow-lg shadow-indigo-500/25"
+            className="inline-block rounded-xl bg-[var(--accent-primary)] px-8 py-3 text-base font-bold text-white shadow-lg shadow-[var(--accent-primary)]/20"
           >
             Start free
           </Link>
@@ -358,13 +358,13 @@ export default async function ComparePage({
 
 function FeatureCell({ value }: { value: string }) {
   if (value === 'yes' || value.startsWith('yes')) {
-    return <span className="font-semibold text-[#16a34a]">{value === 'yes' ? '✓ Yes' : `✓ ${value.replace('yes ', '')}`}</span>;
+    return <span className="font-semibold text-[var(--success)]">{value === 'yes' ? '✓ Yes' : `✓ ${value.replace('yes ', '')}`}</span>;
   }
   if (value === 'no') {
-    return <span className="text-[#a09e96]">✗ No</span>;
+    return <span className="text-[var(--text-tertiary)]">✗ No</span>;
   }
   if (value === 'partial' || value.startsWith('partial')) {
-    return <span className="text-[#d97706]">◐ {value === 'partial' ? 'Partial' : value.replace('partial ', '')}</span>;
+    return <span className="text-[var(--warning)]">◐ {value === 'partial' ? 'Partial' : value.replace('partial ', '')}</span>;
   }
-  return <span className="text-[#6b6960]">{value}</span>;
+  return <span className="text-muted-foreground">{value}</span>;
 }

@@ -64,23 +64,23 @@ const CATEGORIES = ['All', 'Guides', 'Workflow', 'Comparison', 'Product'];
 
 export default function BlogPage() {
   return (
-    <main className="min-h-screen bg-[#f6f5f2]">
-      <nav className="sticky top-0 z-50 border-b border-[#e4e2dd] bg-white/85 backdrop-blur-xl">
+    <main className="min-h-screen bg-background">
+      <nav className="sticky top-0 z-50 border-b border-border bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#5046e5] to-[#7c3aed]">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-primary)]">
               <span className="text-xs font-extrabold text-white">O</span>
             </div>
             <span className="font-bold tracking-tight">
-              OriginClip<span className="text-[#5046e5]">AI</span>
+              OriginClip<span className="text-[var(--accent-primary)]">AI</span>
             </span>
-            <span className="ml-2 rounded-md bg-[#f6f5f2] px-2 py-0.5 text-[10px] font-bold text-[#6b6960]">
+            <span className="ml-2 rounded-md bg-background px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
               Blog
             </span>
           </Link>
           <Link
             href="/sign-up"
-            className="rounded-lg bg-gradient-to-r from-[#5046e5] to-[#7c3aed] px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-500/25"
+            className="rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[var(--accent-primary)]/20"
           >
             Try free
           </Link>
@@ -89,7 +89,7 @@ export default function BlogPage() {
 
       <div className="mx-auto max-w-4xl px-6 py-12">
         <h1 className="mb-2 text-3xl font-bold tracking-tight">Blog</h1>
-        <p className="mb-8 text-[#6b6960]">
+        <p className="mb-8 text-muted-foreground">
           Guides, tutorials, and insights on content repurposing for creators.
         </p>
 
@@ -100,8 +100,8 @@ export default function BlogPage() {
               key={cat}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 cat === 'All'
-                  ? 'bg-[#5046e5]/[0.06] text-[#4338ca]'
-                  : 'text-[#6b6960] hover:bg-[#e4e2dd]/50'
+                  ? 'bg-[var(--accent-primary)]/[0.06] text-[var(--accent-primary)]'
+                  : 'text-muted-foreground hover:bg-[var(--border-default)]/50'
               }`}
             >
               {cat}
@@ -115,20 +115,20 @@ export default function BlogPage() {
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="block rounded-2xl border border-[#e4e2dd] bg-white p-6 shadow-sm transition hover:shadow-md"
+              className="block rounded-2xl border border-border bg-white p-6 shadow-sm transition hover:shadow-md"
             >
               <div className="mb-2 flex items-center gap-3">
-                <span className="rounded-md bg-[#5046e5]/[0.06] px-2 py-0.5 text-[10px] font-bold text-[#5046e5]">
+                <span className="rounded-md bg-[var(--accent-primary)]/[0.06] px-2 py-0.5 text-[10px] font-bold text-[var(--accent-primary)]">
                   {post.category}
                 </span>
-                <span className="text-xs text-[#a09e96]">{post.date}</span>
-                <span className="text-xs text-[#a09e96]">·</span>
-                <span className="text-xs text-[#a09e96]">{post.readTime} read</span>
+                <span className="text-xs text-[var(--text-tertiary)]">{post.date}</span>
+                <span className="text-xs text-[var(--text-tertiary)]">·</span>
+                <span className="text-xs text-[var(--text-tertiary)]">{post.readTime} read</span>
               </div>
-              <h2 className="mb-2 text-lg font-bold leading-snug tracking-tight hover:text-[#5046e5]">
+              <h2 className="mb-2 text-lg font-bold leading-snug tracking-tight hover:text-[var(--accent-primary)]">
                 {post.title}
               </h2>
-              <p className="text-sm leading-relaxed text-[#6b6960]">{post.excerpt}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{post.excerpt}</p>
             </Link>
           ))}
         </div>

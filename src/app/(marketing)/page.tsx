@@ -31,7 +31,7 @@ export default function LandingPage() {
       {/* HERO */}
       <section className="mx-auto max-w-4xl px-6 pb-20 pt-24 text-center">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-4 py-1.5 text-xs font-semibold text-[#64748B] shadow-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)]" />
           Now in public beta
         </div>
         <h1 className="mb-6 text-5xl font-bold leading-[1.1] tracking-tight md:text-6xl">
@@ -190,7 +190,7 @@ export default function LandingPage() {
                 key={tier.name}
                 className={`rounded-2xl border p-6 ${
                   tier.highlight
-                    ? 'border-[#6366F1] bg-white shadow-lg shadow-indigo-500/10'
+                    ? 'border-[#6366F1] bg-white shadow-lg shadow-[var(--accent-primary)]/10'
                     : 'border-black/[0.08] bg-white shadow-sm'
                 }`}
               >
@@ -208,7 +208,7 @@ export default function LandingPage() {
                 <ul className="mb-6 space-y-2.5">
                   {tier.features.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm text-[#64748B]">
-                      <span className="mt-0.5 text-[#16a34a]">✓</span>
+                      <span className="mt-0.5 text-[var(--success)]">✓</span>
                       {f}
                     </li>
                   ))}
