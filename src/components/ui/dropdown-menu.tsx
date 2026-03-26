@@ -1,3 +1,4 @@
+// src/components/ui/dropdown-menu.tsx
 'use client';
 
 import { useState, useRef, useEffect, type ReactNode } from 'react';
@@ -99,9 +100,14 @@ export function DropdownContent({ children, align = 'end', _open, _setOpen }: Dr
 
   return (
     <div
-      className={`absolute top-full z-50 mt-1 min-w-[180px] rounded-xl border border-[#e4e2dd] bg-white py-1 shadow-lg animate-in fade-in zoom-in-95 duration-150 ${
+      className={`absolute top-full z-50 mt-1 min-w-[180px] rounded-lg py-1 animate-in fade-in zoom-in-95 duration-150 ${
         align === 'end' ? 'right-0' : 'left-0'
       }`}
+      style={{
+        background: 'var(--bg-base)',
+        border: '1px solid var(--border-default)',
+        boxShadow: 'var(--shadow-lg)',
+      }}
     >
       {/* Inject _setOpen into DropdownItem children */}
       {Array.isArray(children)
@@ -142,14 +148,26 @@ export function DropdownItem({ children, onClick, disabled, variant = 'default',
     <button
       onClick={handleClick}
       disabled={disabled}
-      className={`flex w-full items-center gap-2 rounded-lg mx-1 px-3 py-2 text-xs font-medium transition ${
-        disabled
-          ? 'cursor-not-allowed opacity-50'
+      className="flex w-full items-center gap-2 rounded-md mx-1 px-3 py-2 text-xs font-medium transition-colors duration-150"
+      style={{
+        width: 'calc(100% - 8px)',
+        color: disabled
+          ? 'var(--text-tertiary)'
           : variant === 'destructive'
-            ? 'text-[#dc2626] hover:bg-[#dc2626]/[0.04]'
-            : 'text-[#1a1a1a] hover:bg-[#f6f5f2]'
-      }`}
-      style={{ width: 'calc(100% - 8px)' }}
+            ? 'var(--error)'
+            : 'var(--text-primary)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.background =
+            variant === 'destructive' ? 'var(--error-subtle)' : 'var(--bg-surface-1)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+      }}
     >
       {children}
     </button>
@@ -159,5 +177,5 @@ export function DropdownItem({ children, onClick, disabled, variant = 'default',
 // ─── Separator ──────────────────────────────────────────────────────
 
 export function DropdownSeparator() {
-  return <div className="mx-2 my-1 h-px bg-[#e4e2dd]" />;
+  return <div className="mx-2 my-1 h-px" style={{ background: 'var(--border-default)' }} />;
 }

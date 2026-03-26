@@ -8,38 +8,27 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
 
-const variantStyles: Record<string, string> = {
-  primary:
-    'bg-gradient-to-r from-[#5046e5] to-[#7c3aed] text-white shadow-md shadow-indigo-500/25 hover:shadow-lg',
-  secondary:
-    'bg-white text-[#6b6960] border border-[#e4e2dd] shadow-sm hover:bg-[#f0efec]',
-  danger:
-    'bg-white text-[#dc2626] border border-[#e4e2dd] shadow-sm hover:bg-[#dc2626]/[0.04]',
-  ghost:
-    'bg-transparent text-[#6b6960] hover:bg-[#f0efec] hover:text-[#1a1a1a]',
-  'accent-outline':
-    'bg-[#5046e5]/[0.06] text-[#4338ca] border border-[#5046e5]/20 hover:bg-[#5046e5]/[0.1]',
-};
-
 const sizeStyles: Record<string, string> = {
-  sm: 'px-3 py-1.5 text-xs rounded-lg',
-  md: 'px-4 py-2.5 text-sm rounded-[10px]',
-  lg: 'px-6 py-3 text-base rounded-xl',
+  sm: 'px-3 py-1.5 text-[13px] rounded-md',
+  md: 'px-4 py-2.5 text-[14px] rounded-md',
+  lg: 'px-6 py-3 text-base rounded-lg',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', className, children, disabled, ...props }, ref) => {
+  ({ variant = 'primary', size = 'md', className, children, disabled, style, ...props }, ref) => {
+    const variantStyle = getVariantStyle(variant);
+
     return (
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center gap-2 font-bold transition-all',
+          'inline-flex items-center justify-center gap-2 font-medium transition-all duration-150',
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          variantStyles[variant],
           sizeStyles[size],
           className,
         )}
         disabled={disabled}
+        style={{ ...variantStyle, ...style }}
         {...props}
       >
         {children}
@@ -49,3 +38,41 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = 'Button';
+
+function getVariantStyle(variant: string): React.CSSProperties {
+  switch (variant) {
+    case 'primary':
+      return {
+        background: 'var(--accent-primary)',
+        color: '#FFFFFF',
+        boxShadow: 'var(--shadow-sm)',
+      };
+    case 'secondary':
+      return {
+        background: 'var(--bg-base)',
+        color: 'var(--text-secondary)',
+        border: '1px solid var(--border-default)',
+        boxShadow: 'var(--shadow-sm)',
+      };
+    case 'danger':
+      return {
+        background: 'var(--bg-base)',
+        color: 'var(--error)',
+        border: '1px solid var(--border-default)',
+        boxShadow: 'var(--shadow-sm)',
+      };
+    case 'ghost':
+      return {
+        background: 'transparent',
+        color: 'var(--text-secondary)',
+      };
+    case 'accent-outline':
+      return {
+        background: 'var(--accent-subtle)',
+        color: 'var(--accent-primary)',
+        border: '1px solid rgba(99,102,241,0.2)',
+      };
+    default:
+      return {};
+  }
+}

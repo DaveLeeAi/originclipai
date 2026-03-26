@@ -8,23 +8,39 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<string, string> = {
-  default: 'bg-[#f6f5f2] text-[#6b6960] border border-[#e4e2dd]',
-  accent: 'bg-[#5046e5]/[0.06] text-[#4338ca]',
-  green: 'bg-[#16a34a]/[0.08] text-[#16a34a] border border-[#16a34a]/20',
-  amber: 'bg-[#d97706]/[0.08] text-[#d97706] border border-[#d97706]/20',
-  red: 'bg-[#dc2626]/[0.06] text-[#dc2626]',
-  cyan: 'bg-[#0891b2]/[0.07] text-[#0891b2] border border-[#0891b2]/20',
-  muted: 'bg-[#a09e96]/[0.08] text-[#a09e96]',
+  default: 'border',
+  accent: '',
+  green: 'border',
+  amber: 'border',
+  red: '',
+  cyan: 'border',
+  muted: '',
+};
+
+const variantColors: Record<string, { bg: string; text: string; border?: string }> = {
+  default: { bg: 'var(--bg-surface-2)', text: 'var(--text-secondary)', border: 'var(--border-default)' },
+  accent: { bg: 'var(--accent-subtle)', text: 'var(--accent-primary)' },
+  green: { bg: 'var(--success-subtle)', text: 'var(--success)', border: 'rgba(34,197,94,0.2)' },
+  amber: { bg: 'var(--warning-subtle)', text: 'var(--warning)', border: 'rgba(245,158,11,0.2)' },
+  red: { bg: 'var(--error-subtle)', text: 'var(--error)' },
+  cyan: { bg: 'var(--info-subtle)', text: 'var(--info)', border: 'rgba(59,130,246,0.2)' },
+  muted: { bg: 'var(--bg-surface-2)', text: 'var(--text-tertiary)' },
 };
 
 export function Badge({ children, variant = 'default', className }: BadgeProps) {
+  const colors = variantColors[variant] ?? variantColors.default;
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold font-mono tracking-wide',
+        'inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] font-semibold font-mono tracking-wide',
         variantStyles[variant],
         className,
       )}
+      style={{
+        background: colors.bg,
+        color: colors.text,
+        borderColor: colors.border,
+      }}
     >
       {children}
     </span>
@@ -49,22 +65,31 @@ interface StatusDotProps {
   size?: 'sm' | 'md';
 }
 
-const statusColors: Record<string, string> = {
-  approved: 'bg-[#16a34a]',
-  review: 'bg-[#d97706]',
-  rejected: 'bg-[#dc2626]',
-  draft: 'bg-[#a09e96]',
-  queued: 'bg-[#5046e5]',
-  posted: 'bg-[#16a34a]',
-  failed: 'bg-[#dc2626]',
-  posting: 'bg-[#5046e5] animate-pulse',
-  scheduled: 'bg-[#5046e5]',
+const statusColorMap: Record<string, string> = {
+  approved: 'var(--success)',
+  review: 'var(--warning)',
+  rejected: 'var(--error)',
+  draft: 'var(--text-tertiary)',
+  queued: 'var(--pending)',
+  posted: 'var(--success)',
+  failed: 'var(--error)',
+  posting: 'var(--info)',
+  scheduled: 'var(--accent-primary)',
 };
+
+const pulsingStatuses = new Set(['queued', 'posting']);
 
 export function StatusDot({ status, size = 'sm' }: StatusDotProps) {
   const sizeClass = size === 'sm' ? 'h-[7px] w-[7px]' : 'h-2.5 w-2.5';
   return (
-    <span className={cn('inline-block shrink-0 rounded-full', sizeClass, statusColors[status] ?? 'bg-[#a09e96]')} />
+    <span
+      className={cn(
+        'inline-block shrink-0 rounded-full',
+        sizeClass,
+        pulsingStatuses.has(status) && 'animate-pulse',
+      )}
+      style={{ background: statusColorMap[status] ?? 'var(--text-tertiary)' }}
+    />
   );
 }
 
