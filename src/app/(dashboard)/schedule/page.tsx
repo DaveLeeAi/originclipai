@@ -25,7 +25,7 @@ export default function SchedulePage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-xl font-bold tracking-tight">Schedule</h1>
-        <p className="text-sm text-[#6b6960]">
+        <p className="text-sm text-muted-foreground">
           {posts.length} items in queue
         </p>
       </div>

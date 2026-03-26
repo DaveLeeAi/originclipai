@@ -91,14 +91,14 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-bold text-[#1a1a1a]">{dialog.title}</h2>
-            <p className="mt-2 text-sm text-[#6b6960]">{dialog.description}</p>
+            <h2 className="text-lg font-bold text-foreground">{dialog.title}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{dialog.description}</p>
 
             <div className="mt-6 flex justify-end gap-3">
               <button
                 ref={cancelRef}
                 onClick={handleCancel}
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-[#6b6960] transition hover:bg-[#f6f5f2] hover:text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#5046e5]/30"
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-background hover:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30"
               >
                 {dialog.cancelText ?? 'Cancel'}
               </button>
@@ -106,8 +106,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 onClick={handleConfirm}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 ${
                   dialog.variant === 'destructive'
-                    ? 'bg-[#dc2626] hover:bg-[#b91c1c] focus:ring-red-300'
-                    : 'bg-[#5046e5] hover:bg-[#3f37c9] focus:ring-[#5046e5]/30'
+                    ? 'bg-[var(--error)] hover:bg-[#b91c1c] focus:ring-red-300'
+                    : 'bg-[var(--accent-primary)] hover:bg-[#3f37c9] focus:ring-[var(--accent-primary)]/30'
                 }`}
               >
                 {dialog.confirmText ?? 'Confirm'}

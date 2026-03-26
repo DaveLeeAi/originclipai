@@ -39,7 +39,7 @@ export function SchedulePageClient({ initialItems }: SchedulePageClientProps) {
     <div className="p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Schedule</h1>
-        <p className="text-sm text-[#6b6960]">
+        <p className="text-sm text-muted-foreground">
           {items.filter((i) => i.status === 'queued').length} queued ·{' '}
           {items.filter((i) => i.status === 'posted').length} posted
         </p>

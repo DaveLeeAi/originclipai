@@ -16,9 +16,9 @@ export function Card({ children, className, hoverable = false, selected = false,
       className={cn(
         'rounded-2xl border bg-white p-4 transition-all',
         selected
-          ? 'border-[#5046e5]/30 bg-[#5046e5]/[0.03] shadow-sm'
-          : 'border-[#e4e2dd] shadow-sm',
-        hoverable && !selected && 'cursor-pointer hover:shadow-md hover:border-[#d4d2cc]',
+          ? 'border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/[0.03] shadow-sm'
+          : 'border-border shadow-sm',
+        hoverable && !selected && 'cursor-pointer hover:shadow-md hover:border-[var(--border-hover)]',
         onClick && 'cursor-pointer',
         className,
       )}

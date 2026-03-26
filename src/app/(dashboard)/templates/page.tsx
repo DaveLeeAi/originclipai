@@ -36,7 +36,7 @@ export default function TemplatesPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-xl font-bold tracking-tight">Prompt Templates</h1>
-        <p className="text-sm text-[#6b6960]">Custom output formats for your content</p>
+        <p className="text-sm text-muted-foreground">Custom output formats for your content</p>
       </div>
       <div className="max-w-3xl">
         <TemplatesManager

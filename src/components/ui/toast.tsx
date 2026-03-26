@@ -93,7 +93,7 @@ const TYPE_STYLES: Record<ToastType, string> = {
   success: 'border-l-emerald-500 border-emerald-200 bg-emerald-50 text-emerald-800',
   error: 'border-l-red-500 border-red-200 bg-red-50 text-red-800',
   warning: 'border-l-amber-500 border-amber-200 bg-amber-50 text-amber-800',
-  info: 'border-l-[#5046e5] border-[#e4e2dd] bg-white text-[#1a1a1a]',
+  info: 'border-l-[var(--accent-primary)] border-border bg-white text-foreground',
   undo: 'border-l-amber-500 border-amber-200 bg-amber-50 text-amber-800',
 };
 

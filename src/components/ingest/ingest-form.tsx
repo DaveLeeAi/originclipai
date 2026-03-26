@@ -152,13 +152,13 @@ export function IngestForm() {
         <h1 className="mb-2 text-center text-[30px] font-bold leading-tight tracking-tight">
           What are we repurposing?
         </h1>
-        <p className="mb-8 text-center text-[15px] text-[#6b6960]">
+        <p className="mb-8 text-center text-[15px] text-muted-foreground">
           Paste a URL, upload a file, or drop content below
         </p>
 
         {/* URL Input */}
-        <div className="mb-5 flex gap-2 rounded-2xl border border-[#e4e2dd] bg-white p-1.5 shadow-md">
-          <div className="flex items-center pl-3 text-[#a09e96]">
+        <div className="mb-5 flex gap-2 rounded-2xl border border-border bg-white p-1.5 shadow-md">
+          <div className="flex items-center pl-3 text-[var(--text-tertiary)]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
               <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
@@ -173,7 +173,7 @@ export function IngestForm() {
             placeholder={activeMode && (activeMode === 'youtube' || activeMode === 'article')
               ? INPUT_MODE_PLACEHOLDERS[activeMode]
               : 'Paste YouTube URL, article URL, or any public link...'}
-            className="flex-1 bg-transparent py-2.5 text-[15px] outline-none placeholder:text-[#a09e96]"
+            className="flex-1 bg-transparent py-2.5 text-[15px] outline-none placeholder:text-[var(--text-tertiary)]"
             disabled={isProcessing}
           />
           <Button
@@ -186,7 +186,7 @@ export function IngestForm() {
         </div>
 
         {error && (
-          <div className="mb-5 rounded-xl border border-[#dc2626]/20 bg-[#dc2626]/[0.04] px-4 py-3 text-sm text-[#dc2626]">
+          <div className="mb-5 rounded-xl border border-[var(--error)]/20 bg-[var(--error)]/[0.04] px-4 py-3 text-sm text-[var(--error)]">
             {error}
           </div>
         )}
@@ -194,25 +194,25 @@ export function IngestForm() {
         {/* Source type cards */}
         <div className="mb-6 grid grid-cols-4 gap-3">
           {([
-            { label: 'YouTube URL', desc: 'Any public video', color: '#dc2626', mode: 'youtube' as InputMode },
-            { label: 'PDF / Article', desc: 'Blog, whitepaper', color: '#5046e5', mode: 'article' as InputMode },
-            { label: 'Upload MP4', desc: 'Local video file', color: '#7c3aed', mode: 'video' as InputMode },
-            { label: 'Audio File', desc: 'MP3, WAV, M4A', color: '#0891b2', mode: 'audio' as InputMode },
+            { label: 'YouTube URL', desc: 'Any public video', color: 'var(--error)', mode: 'youtube' as InputMode },
+            { label: 'PDF / Article', desc: 'Blog, whitepaper', color: 'var(--accent-primary)', mode: 'article' as InputMode },
+            { label: 'Upload MP4', desc: 'Local video file', color: 'var(--accent-primary)', mode: 'video' as InputMode },
+            { label: 'Audio File', desc: 'MP3, WAV, M4A', color: 'var(--info)', mode: 'audio' as InputMode },
           ]).map((src) => (
             <div
               key={src.label}
               onClick={() => handleCardClick(src.mode)}
               className={`cursor-pointer rounded-xl border bg-white p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
                 activeMode === src.mode
-                  ? 'border-[#5046e5] ring-1 ring-[#5046e5]/30 shadow-md'
-                  : 'border-[#e4e2dd] hover:border-[#5046e5]'
+                  ? 'border-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]/30 shadow-md'
+                  : 'border-border hover:border-[var(--accent-primary)]'
               }`}
             >
               <div className="mb-2 text-xs font-bold" style={{ color: src.color }}>
                 ●
               </div>
               <div className="text-xs font-bold">{src.label}</div>
-              <div className="mt-0.5 text-[11px] text-[#a09e96]">{src.desc}</div>
+              <div className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{src.desc}</div>
             </div>
           ))}
         </div>
@@ -233,13 +233,13 @@ export function IngestForm() {
           onDrop={handleDrop}
           className={`rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
             dragOver
-              ? 'border-[#5046e5] bg-[#5046e5]/[0.03]'
-              : 'border-[#e4e2dd] hover:border-[#d4d2cc]'
+              ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)]/[0.03]'
+              : 'border-border hover:border-[var(--border-hover)]'
           }`}
         >
-          <p className="mb-2 text-sm text-[#6b6960]">
+          <p className="mb-2 text-sm text-muted-foreground">
             Drag and drop a file here, or{' '}
-            <label className="cursor-pointer font-semibold text-[#5046e5] hover:underline">
+            <label className="cursor-pointer font-semibold text-[var(--accent-primary)] hover:underline">
               browse
               <input
                 type="file"
@@ -250,7 +250,7 @@ export function IngestForm() {
               />
             </label>
           </p>
-          <p className="text-xs text-[#a09e96]">
+          <p className="text-xs text-[var(--text-tertiary)]">
             MP4, MOV, WebM, MP3, WAV, M4A, PDF — up to 5GB
           </p>
         </div>
