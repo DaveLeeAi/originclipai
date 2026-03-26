@@ -11,16 +11,16 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#f6f5f2]">
+    <div className="flex min-h-screen flex-col bg-white">
       <MarketingNav />
       <main className="flex-1">{children}</main>
-      <footer className="border-t border-[#e4e2dd] bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-xs text-[#a09e96]">
+      <footer className="border-t border-black/[0.08] bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-xs text-[#94A3B8]">
           <span>&copy; {new Date().getFullYear()} OriginClipAI</span>
           <div className="flex gap-6">
-            <a href="/pricing" className="hover:text-[#6b6960]">Pricing</a>
-            <a href="/blog" className="hover:text-[#6b6960]">Blog</a>
-            <a href="/docs" className="hover:text-[#6b6960]">Docs</a>
+            <a href="/pricing" className="hover:text-[#64748B]">Pricing</a>
+            <a href="/blog" className="hover:text-[#64748B]">Blog</a>
+            <a href="/docs" className="hover:text-[#64748B]">Docs</a>
           </div>
         </div>
       </footer>
